@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "name": "github",
+  "description": "GitHub integration for managing repositories, issues, and pull requests",
+  "config": {
+    "mcpServers": {
+      "github": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-github"],
+        "env": {
+          "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+        }
+      }
+    }
+  },
+  "setup": {
+    "steps": [
+      "1. Create a GitHub Personal Access Token at https://github.com/settings/tokens",
+      "2. Grant permissions: repo, read:org, read:user",
+      "3. Set GITHUB_TOKEN environment variable or replace ${GITHUB_TOKEN} with your token",
+      "4. Add the config to your Claude settings file"
+    ],
+    "requiredEnv": ["GITHUB_TOKEN"]
+  },
+  "tools": [
+    "create_issue",
+    "list_issues",
+    "get_issue",
+    "update_issue",
+    "create_pull_request",
+    "list_pull_requests",
+    "get_pull_request",
+    "merge_pull_request",
+    "list_repositories",
+    "create_repository",
+    "search_code",
+    "search_issues"
+  ]
+}

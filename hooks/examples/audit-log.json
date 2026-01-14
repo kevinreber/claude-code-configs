@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Log all Claude Code tool usage for audit purposes",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "command": "scripts/audit-log.sh",
+        "description": "Log tool usage to audit file"
+      }
+    ]
+  },
+  "_scripts": {
+    "audit-log.sh": "#!/bin/bash\n\n# Create audit log directory if it doesn't exist\nAUDIT_DIR=\"${HOME}/.claude/audit-logs\"\nmkdir -p \"$AUDIT_DIR\"\n\n# Generate log file name based on date\nLOG_FILE=\"$AUDIT_DIR/$(date +%Y-%m-%d).jsonl\"\n\n# Create log entry\nLOG_ENTRY=$(jq -n \\\n  --arg timestamp \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" \\\n  --arg session \"$SESSION_ID\" \\\n  --arg tool \"$TOOL_NAME\" \\\n  --arg working_dir \"$WORKING_DIR\" \\\n  --argjson input \"$TOOL_INPUT\" \\\n  '{\n    timestamp: $timestamp,\n    session_id: $session,\n    tool: $tool,\n    working_directory: $working_dir,\n    input: $input\n  }')\n\n# Append to log file\necho \"$LOG_ENTRY\" >> \"$LOG_FILE\"\n\n# Optional: Keep only last 30 days of logs\nfind \"$AUDIT_DIR\" -name \"*.jsonl\" -mtime +30 -delete 2>/dev/null || true"
+  }
+}

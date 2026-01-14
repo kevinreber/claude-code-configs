@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "name": "memory",
+  "description": "Knowledge graph memory for persistent context across sessions",
+  "config": {
+    "mcpServers": {
+      "memory": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-memory"]
+      }
+    }
+  },
+  "setup": {
+    "steps": [
+      "1. No additional configuration required for basic usage",
+      "2. Add the config to your Claude settings file",
+      "3. Optionally specify a file path for persistent storage"
+    ],
+    "persistentConfig": {
+      "mcpServers": {
+        "memory": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-memory"],
+          "env": {
+            "MEMORY_FILE_PATH": "~/.claude/memory.json"
+          }
+        }
+      }
+    }
+  },
+  "tools": [
+    "store_memory",
+    "retrieve_memory",
+    "search_memories",
+    "delete_memory",
+    "list_memories"
+  ],
+  "useCases": [
+    "Storing project-specific context",
+    "Remembering user preferences",
+    "Building a knowledge base over time",
+    "Tracking decisions and rationale"
+  ],
+  "notes": "Memory persists across sessions when configured with a file path. Useful for long-running projects."
+}

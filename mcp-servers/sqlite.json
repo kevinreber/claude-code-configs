@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "name": "sqlite",
+  "description": "SQLite database integration for local database operations",
+  "config": {
+    "mcpServers": {
+      "sqlite": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-sqlite", "--db-path", "./database.sqlite"]
+      }
+    }
+  },
+  "setup": {
+    "steps": [
+      "1. Replace './database.sqlite' with the path to your SQLite database",
+      "2. Use an absolute path or path relative to where Claude Code runs",
+      "3. Add the config to your Claude settings file"
+    ],
+    "examples": [
+      {
+        "description": "Development database",
+        "args": ["-y", "@modelcontextprotocol/server-sqlite", "--db-path", "./dev.db"]
+      },
+      {
+        "description": "Absolute path",
+        "args": ["-y", "@modelcontextprotocol/server-sqlite", "--db-path", "/home/user/data/app.sqlite"]
+      }
+    ]
+  },
+  "tools": [
+    "query",
+    "execute",
+    "list_tables",
+    "describe_table",
+    "export_query"
+  ],
+  "notes": "SQLite is great for local development and testing. Consider backing up your database before allowing write operations."
+}

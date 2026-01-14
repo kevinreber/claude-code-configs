@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Require confirmation for destructive operations",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "scripts/confirm-destructive.sh",
+        "description": "Prompt for confirmation on destructive bash commands"
+      }
+    ]
+  },
+  "_scripts": {
+    "confirm-destructive.sh": "#!/bin/bash\n\n# List of patterns to match destructive commands\nDESTRUCTIVE_PATTERNS=(\n  'rm -rf'\n  'rm -r'\n  'git push.*--force'\n  'git reset --hard'\n  'drop table'\n  'drop database'\n  'truncate'\n  'delete from'\n  'kubectl delete'\n  'docker system prune'\n)\n\nCOMMAND=$(echo \"$TOOL_INPUT\" | jq -r '.command // empty')\n\n# Check if command matches any destructive pattern\nfor pattern in \"${DESTRUCTIVE_PATTERNS[@]}\"; do\n  if echo \"$COMMAND\" | grep -iq \"$pattern\"; then\n    echo \"WARNING: Destructive command detected!\"\n    echo \"Command: $COMMAND\"\n    echo \"\"\n    echo \"This command matches pattern: $pattern\"\n    echo \"Please review carefully before allowing.\"\n    \n    # Exit with non-zero to block (Claude will ask for confirmation)\n    exit 1\n  fi\ndone\n\nexit 0"
+  },
+  "_notes": "This hook will cause Claude to pause and show the warning message before executing destructive commands. The user can then choose to allow or deny the action."
+}

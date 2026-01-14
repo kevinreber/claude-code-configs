@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "name": "postgres",
+  "description": "PostgreSQL database integration for querying and schema inspection",
+  "config": {
+    "mcpServers": {
+      "postgres": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-postgres"],
+        "env": {
+          "POSTGRES_CONNECTION_STRING": "${DATABASE_URL}"
+        }
+      }
+    }
+  },
+  "setup": {
+    "steps": [
+      "1. Set DATABASE_URL environment variable with your PostgreSQL connection string",
+      "2. Format: postgresql://user:password@host:port/database",
+      "3. Or replace ${DATABASE_URL} with your connection string directly",
+      "4. Add the config to your Claude settings file"
+    ],
+    "requiredEnv": ["DATABASE_URL"],
+    "securityNotes": [
+      "Use a read-only database user for safety",
+      "Consider using a connection string without write permissions",
+      "Never use production credentials for development"
+    ]
+  },
+  "tools": [
+    "query",
+    "list_tables",
+    "describe_table",
+    "list_schemas"
+  ],
+  "notes": "For safety, consider creating a read-only database user for Claude to use."
+}
