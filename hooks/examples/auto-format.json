@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Auto-format files after Claude edits them",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "scripts/auto-format.sh",
+        "description": "Run formatter on modified files"
+      }
+    ]
+  },
+  "_scripts": {
+    "auto-format.sh": "#!/bin/bash\n\n# Extract file path from tool input\nFILE_PATH=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // .path // empty')\n\nif [ -z \"$FILE_PATH\" ]; then\n  exit 0\nfi\n\n# Determine formatter based on file extension\ncase \"$FILE_PATH\" in\n  *.js|*.jsx|*.ts|*.tsx|*.json|*.md)\n    npx prettier --write \"$FILE_PATH\" 2>/dev/null || true\n    ;;\n  *.py)\n    black \"$FILE_PATH\" 2>/dev/null || ruff format \"$FILE_PATH\" 2>/dev/null || true\n    ;;\n  *.go)\n    gofmt -w \"$FILE_PATH\" 2>/dev/null || true\n    ;;\n  *.rs)\n    rustfmt \"$FILE_PATH\" 2>/dev/null || true\n    ;;\nesac"
+  }
+}

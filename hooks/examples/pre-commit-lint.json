@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Run linters before Claude commits code",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "scripts/pre-commit-check.sh",
+        "description": "Check if this is a git commit and run linters first"
+      }
+    ]
+  },
+  "_scripts": {
+    "pre-commit-check.sh": "#!/bin/bash\n\n# Check if this is a git commit command\nCOMMAND=$(echo \"$TOOL_INPUT\" | jq -r '.command // empty')\n\nif [[ \"$COMMAND\" == *\"git commit\"* ]]; then\n  echo \"Running pre-commit checks...\"\n  \n  # Run linters on staged files\n  STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)\n  \n  for file in $STAGED_FILES; do\n    case \"$file\" in\n      *.js|*.jsx|*.ts|*.tsx)\n        npx eslint \"$file\" || exit 1\n        ;;\n      *.py)\n        ruff check \"$file\" || exit 1\n        ;;\n    esac\n  done\n  \n  echo \"All checks passed!\"\nfi\n\nexit 0"
+  }
+}

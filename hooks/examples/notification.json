@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Desktop notifications when Claude needs attention or completes tasks",
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": ".*",
+        "command": "scripts/notify.sh",
+        "description": "Send desktop notification"
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": ".*",
+        "command": "scripts/task-complete.sh",
+        "description": "Notify when Claude finishes a task"
+      }
+    ]
+  },
+  "_scripts": {
+    "notify.sh": "#!/bin/bash\n\n# Cross-platform notification\nMESSAGE=\"${NOTIFICATION_MESSAGE:-Claude needs your attention}\"\n\nif command -v notify-send &> /dev/null; then\n  # Linux\n  notify-send \"Claude Code\" \"$MESSAGE\"\nelif command -v osascript &> /dev/null; then\n  # macOS\n  osascript -e \"display notification \\\"$MESSAGE\\\" with title \\\"Claude Code\\\"\"\nelif command -v powershell.exe &> /dev/null; then\n  # Windows (WSL)\n  powershell.exe -Command \"[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); [System.Windows.Forms.MessageBox]::Show('$MESSAGE', 'Claude Code')\"\nfi",
+    "task-complete.sh": "#!/bin/bash\n\n# Play sound and show notification\nMESSAGE=\"Task completed!\"\n\nif command -v notify-send &> /dev/null; then\n  notify-send \"Claude Code\" \"$MESSAGE\"\n  paplay /usr/share/sounds/freedesktop/stereo/complete.oga 2>/dev/null || true\nelif command -v osascript &> /dev/null; then\n  osascript -e \"display notification \\\"$MESSAGE\\\" with title \\\"Claude Code\\\" sound name \\\"Glass\\\"\"\nfi"
+  }
+}

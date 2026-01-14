@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "name": "filesystem",
+  "description": "Extended filesystem operations beyond Claude's built-in capabilities",
+  "config": {
+    "mcpServers": {
+      "filesystem": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-filesystem",
+          "/path/to/allowed/directory"
+        ]
+      }
+    }
+  },
+  "setup": {
+    "steps": [
+      "1. Replace '/path/to/allowed/directory' with directories you want to allow access to",
+      "2. You can specify multiple directories as additional arguments",
+      "3. Add the config to your Claude settings file"
+    ],
+    "examples": [
+      {
+        "description": "Allow access to home directory and projects",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "~", "~/projects"]
+      },
+      {
+        "description": "Restrict to specific project",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "~/my-project"]
+      }
+    ]
+  },
+  "tools": [
+    "read_file",
+    "read_multiple_files",
+    "write_file",
+    "create_directory",
+    "list_directory",
+    "move_file",
+    "search_files",
+    "get_file_info"
+  ],
+  "notes": "This server provides file operations with explicit directory sandboxing for security."
+}
