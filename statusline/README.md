@@ -76,3 +76,8 @@ You can customize:
 - Progress bar width (line 67)
 - Token formatting threshold (line 19)
 - Cost display format (lines 60-64)
+
+## Additional Resources
+
+For more statusline styling examples and inspiration:
+- [ccstatusline](https://github.com/sirmalloc/ccstatusline) - Collection of Claude Code statusline examples with various styling approaches
