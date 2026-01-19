@@ -21,18 +21,52 @@ Hooks are configured in your Claude settings file (`.claude/settings.json` or gl
     "PreToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "echo 'About to modify: $TOOL_INPUT'"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'About to modify: $TOOL_INPUT'"
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": ".*",
-        "command": "/path/to/hook-script.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/path/to/hook-script.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Claude finished'"
+          }
+        ]
       }
     ]
   }
 }
 ```
+
+### Matcher Property
+
+The `matcher` is a case-sensitive string pattern to match tool names:
+- Simple strings: `"Edit"`, `"Write"`, `"Bash"`
+- Regex patterns: `"Edit|Write"`, `"Notebook.*"`
+- Match all: `".*"` or omit the matcher field
+
+**Note:** `Stop` and `Notification` events do not use matchers - omit the field entirely.
+
+### Hook Types
+
+- `type: "command"` - Execute a shell command
+- `type: "prompt"` - Send to LLM for evaluation (Stop events only)
 
 ## Environment Variables
 

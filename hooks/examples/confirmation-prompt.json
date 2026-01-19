@@ -5,8 +5,12 @@
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "command": "scripts/confirm-destructive.sh",
-        "description": "Prompt for confirmation on destructive bash commands"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/confirm-destructive.sh"
+          }
+        ]
       }
     ]
   },

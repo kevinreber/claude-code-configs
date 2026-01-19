@@ -5,15 +5,22 @@
     "Notification": [
       {
         "matcher": ".*",
-        "command": "scripts/notify.sh",
-        "description": "Send desktop notification"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/notify.sh"
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "matcher": ".*",
-        "command": "scripts/task-complete.sh",
-        "description": "Notify when Claude finishes a task"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/task-complete.sh"
+          }
+        ]
       }
     ]
   },

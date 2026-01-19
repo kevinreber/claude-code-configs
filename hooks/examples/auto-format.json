@@ -5,8 +5,12 @@
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "scripts/auto-format.sh",
-        "description": "Run formatter on modified files"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/auto-format.sh"
+          }
+        ]
       }
     ]
   },

@@ -10,6 +10,7 @@ This directory contains a custom statusline configuration for Claude Code that d
 ## Features
 
 The custom statusline displays:
+- **Account name** - Your logged-in account (auto-detected, leftmost position)
 - **Model name** - Current Claude model being used
 - **Progress bar** - Visual representation of context window usage
 - **Context usage percentage** - Percentage of context window used
@@ -17,15 +18,16 @@ The custom statusline displays:
 - **Cost tracking** - Estimated cost based on model pricing
 - **Git branch** - Current git branch (if in a git repository)
 - **Directory name** - Current working directory name
+- **Session name** - Session name if renamed, otherwise truncated session ID
 
 ### Color Scheme
+- Magenta: Account name and token counts
 - Cyan: Model name
 - Green: Progress bar fill and git branch
-- Yellow: Usage percentage
-- Magenta: Token counts
+- Yellow: Usage percentage and session name
 - Red: Cost
 - Blue: Directory name
-- Dim: Separators and brackets
+- Dim: Separators, brackets, and session brackets
 
 ## Installation
 
@@ -48,6 +50,20 @@ The custom statusline displays:
        "command": "/Users/YOUR_USERNAME/.claude/statusline-command.sh"
      }
    }
+   ```
+
+3. The account name is automatically detected from your Claude login (`~/.claude.json`).
+
+   If auto-detection doesn't work, you can set it manually:
+
+   **Option A**: Set an environment variable in your shell profile (`~/.zshrc` or `~/.bashrc`):
+   ```bash
+   export CLAUDE_ACCOUNT="your-username"
+   ```
+
+   **Option B**: Create an account file:
+   ```bash
+   echo "your-username" > ~/.claude/account
    ```
 
 ## Requirements

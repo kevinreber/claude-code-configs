@@ -5,8 +5,12 @@
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "command": "scripts/pre-commit-check.sh",
-        "description": "Check if this is a git commit and run linters first"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/pre-commit-check.sh"
+          }
+        ]
       }
     ]
   },
