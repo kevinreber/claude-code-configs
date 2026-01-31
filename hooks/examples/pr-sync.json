@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Auto-sync with main/master branch after pushing to a PR to detect and resolve conflicts",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/pr-sync-check.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "_scripts": {
+    "pr-sync-check.sh": "#!/bin/bash\n\n# Check if this is a git push command\nCOMMAND=$(echo \"$TOOL_INPUT\" | jq -r '.command // empty')\n\nif [[ \"$COMMAND\" != *\"git push\"* ]]; then\n  exit 0\nfi\n\n# Determine the default branch (main or master)\nDEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')\nif [ -z \"$DEFAULT_BRANCH\" ]; then\n  # Fallback: check if main or master exists\n  if git show-ref --verify --quiet refs/remotes/origin/main; then\n    DEFAULT_BRANCH=\"main\"\n  elif git show-ref --verify --quiet refs/remotes/origin/master; then\n    DEFAULT_BRANCH=\"master\"\n  else\n    echo \"Could not determine default branch\"\n    exit 0\n  fi\nfi\n\nCURRENT_BRANCH=$(git branch --show-current)\n\n# Don't run on the default branch itself\nif [ \"$CURRENT_BRANCH\" = \"$DEFAULT_BRANCH\" ]; then\n  exit 0\nfi\n\n# Fetch the latest from origin\ngit fetch origin \"$DEFAULT_BRANCH\" --quiet 2>/dev/null\n\n# Check if current branch is behind the default branch\nBEHIND_COUNT=$(git rev-list --count HEAD..origin/\"$DEFAULT_BRANCH\" 2>/dev/null || echo \"0\")\n\nif [ \"$BEHIND_COUNT\" -gt 0 ]; then\n  echo \"\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\n  echo \"⚠️  SYNC REQUIRED: Your branch is $BEHIND_COUNT commit(s) behind origin/$DEFAULT_BRANCH\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\n  echo \"\"\n  echo \"To prevent merge conflicts and failing CI checks, please:\"\n  echo \"\"\n  echo \"  1. Pull the latest changes from $DEFAULT_BRANCH:\"\n  echo \"     git fetch origin $DEFAULT_BRANCH && git merge origin/$DEFAULT_BRANCH\"\n  echo \"\"\n  echo \"  2. If there are merge conflicts:\"\n  echo \"     - Review each conflicting file\"\n  echo \"     - Resolve conflicts by understanding BOTH changes\"\n  echo \"     - Don't just accept one side - merge the intent of both changes\"\n  echo \"     - Run tests after resolving to ensure nothing is broken\"\n  echo \"\"\n  echo \"  3. Push the merged changes:\"\n  echo \"     git push\"\n  echo \"\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\nfi\n\nexit 0"
+  },
+  "_usage": {
+    "install": "Copy scripts/pr-sync-check.sh to your project or ~/.claude/scripts/",
+    "configure": "Add this hook configuration to your ~/.claude/settings.json or .claude/settings.json",
+    "note": "This hook triggers after every git push and checks if your branch needs to sync with main/master"
+  }
+}
