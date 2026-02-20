@@ -133,32 +133,52 @@ RED='\033[31m'
 RESET='\033[0m'
 DIM='\033[2m'
 
+# Get git diff stat (lines added/removed in working tree vs HEAD)
+diff_stat=""
+if [ -n "$branch" ]; then
+    shortstat=$(git -C "$current_dir" --no-optional-locks diff --shortstat 2>/dev/null)
+    lines_added=0
+    lines_removed=0
+    if [ -n "$shortstat" ]; then
+        added_match=$(echo "$shortstat" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+')
+        removed_match=$(echo "$shortstat" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+')
+        [ -n "$added_match" ] && lines_added=$added_match
+        [ -n "$removed_match" ] && lines_removed=$removed_match
+    fi
+    if [ "$lines_added" -gt 0 ] || [ "$lines_removed" -gt 0 ]; then
+        diff_stat="${GREEN}+${lines_added}${RESET} ${RED}-${lines_removed}${RESET}"
+    fi
+fi
+
 # Output status line with colors
 # Progress bar with DIM brackets and GREEN fill
 
-# Build account prefix with session name: kevinreber1[session-name] |
+# Build account prefix with session name: 👤 kevinreber1[session-name] |
 if [ -n "$account_name" ]; then
     if [ -n "$session_name" ]; then
-        account_prefix="${MAGENTA}${account_name}${RESET}${DIM}[${RESET}${YELLOW}${session_name}${RESET}${DIM}]${RESET} ${DIM}|${RESET} "
+        account_prefix="👤 ${MAGENTA}${account_name}${RESET}${DIM}[${RESET}${YELLOW}${session_name}${RESET}${DIM}]${RESET} ${DIM}|${RESET} "
     else
-        account_prefix="${MAGENTA}${account_name}${RESET} ${DIM}|${RESET} "
+        account_prefix="👤 ${MAGENTA}${account_name}${RESET} ${DIM}|${RESET} "
     fi
 else
     account_prefix=""
 fi
 
 if [ -n "$branch" ]; then
-    printf "${account_prefix}${CYAN}%s${RESET} ${DIM}|${RESET} ${DIM}[${RESET}${GREEN}%s${RESET}${DIM}]${RESET} ${YELLOW}%s%%${RESET} ${DIM}|${RESET} ${MAGENTA}%s${MAGENTA}/${MAGENTA}%s${RESET} ${DIM}|${RESET} ${RED}%s${RESET} ${DIM}|${RESET} ${GREEN}%s${RESET} ${DIM}|${RESET} ${BLUE}%s${RESET}" \
+    branch_segment="🌿 ${GREEN}${branch}${RESET}"
+    if [ -n "$diff_stat" ]; then
+        branch_segment="${branch_segment} ${DIM}|${RESET} ✏️  ${diff_stat}"
+    fi
+    printf "${account_prefix}🤖 ${CYAN}%s${RESET} ${DIM}|${RESET} 📊 ${DIM}[${RESET}${GREEN}%s${RESET}${DIM}]${RESET} ${YELLOW}%s%%${RESET} ${DIM}|${RESET} ${MAGENTA}%s${MAGENTA}/${MAGENTA}%s${RESET} ${DIM}|${RESET} 🪙 ${RED}%s${RESET} ${DIM}|${RESET} ${branch_segment} ${DIM}|${RESET} 📁 ${BLUE}%s${RESET}" \
         "$model_name" \
         "$filled_bar" \
         "$used_percentage_int" \
         "$total_tokens_formatted" \
         "$context_size_formatted" \
         "$cost_formatted" \
-        "$branch" \
         "$dir_name"
 else
-    printf "${account_prefix}${CYAN}%s${RESET} ${DIM}|${RESET} ${DIM}[${RESET}${GREEN}%s${RESET}${DIM}]${RESET} ${YELLOW}%s%%${RESET} ${DIM}|${RESET} ${BLUE}%s${RESET}/${MAGENTA}%s${RESET} ${DIM}|${RESET} ${RED}%s${RESET} ${DIM}|${RESET} ${CYAN}%s${RESET}" \
+    printf "${account_prefix}🤖 ${CYAN}%s${RESET} ${DIM}|${RESET} 📊 ${DIM}[${RESET}${GREEN}%s${RESET}${DIM}]${RESET} ${YELLOW}%s%%${RESET} ${DIM}|${RESET} ${BLUE}%s${RESET}/${MAGENTA}%s${RESET} ${DIM}|${RESET} 🪙 ${RED}%s${RESET} ${DIM}|${RESET} 📁 ${CYAN}%s${RESET}" \
         "$model_name" \
         "$filled_bar" \
         "$used_percentage_int" \
