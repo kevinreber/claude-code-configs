@@ -12,6 +12,7 @@ A portable collection of reusable Claude Code configurations for consistent AI-a
 ├── templates/          # CLAUDE.md templates for different project types
 ├── guardrails/         # Safety and constraint configurations
 ├── mcp-servers/        # MCP server configurations
+├── statusline/         # Custom statusline script and settings
 └── install.sh          # Installation script
 ```
 
@@ -87,6 +88,13 @@ Model Context Protocol server configurations:
 - `filesystem` - Extended file operations
 - `database` - Database connections
 - `custom` - Template for custom servers
+
+### Statusline
+Custom statusline script that displays session info in the Claude Code terminal:
+```
+👤 kreber[a1b2c3d4] | 🤖 Claude Sonnet 4.6 | 📊 [====                ] 21% | 42k/200k | 🪙 $0.13 | 🌿 main | ✏️  +12 -3 | 📁 my-project
+```
+See [`statusline/README.md`](statusline/README.md) for installation and customization details.
 
 ## Usage Examples
 
