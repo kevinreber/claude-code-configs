@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit(**/*.md)",
+        "command": "FILE=$(echo $TOOL_INPUT | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get(\"file_path\",\"\"))' 2>/dev/null); [ -n \"$FILE\" ] && echo \"📝 Edited: $FILE\" || true",
+        "description": "Log when markdown files are edited"
+      }
+    ]
+  }
+}
