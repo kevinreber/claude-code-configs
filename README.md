@@ -54,11 +54,23 @@ Custom commands invoked with `/command-name` in Claude Code:
 
 ### Skills
 Specialized capabilities for domain-specific tasks:
+
+**Language skills** (global reference guides for idiomatic code):
+- `rust` - Error handling, async/Tokio, clippy, ownership patterns
+- `typescript` - Strict mode, type utilities, async patterns, tooling
+- `python` - Type hints, uv/ruff, async, pytest, dataclasses, FastAPI
+- `react` - Hooks patterns, component design, state management, performance
+- `go` - Error handling, interfaces, concurrency, context, table-driven tests
+- `bash` - Safe scripting, quoting, traps, idempotency, portability
+
+**Workflow skills**:
 - `code-review` - Thorough code review with checklist
 - `security-audit` - Security vulnerability scanning
 - `api-design` - REST/GraphQL API design assistance
 - `database` - Schema design and query optimization
 - `testing` - Test writing and coverage analysis
+- `git-workflow` - Branching strategies and git operations
+- `gsd-methodology` - Get-Shit-Done workflow methodology
 
 ### Hooks
 Event-driven automations:
