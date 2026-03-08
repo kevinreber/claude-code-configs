@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Ensure significant code changes have corresponding test files — warns when new or modified source files lack tests",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/test-coverage-check.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "_scripts": {
+    "test-coverage-check.sh": "#!/bin/bash\n\n# Check if this is a git commit command\nCOMMAND=$(echo \"$TOOL_INPUT\" | jq -r '.command // empty')\n\nif [[ \"$COMMAND\" != *\"git commit\"* ]]; then\n  exit 0\nfi\n\n# Skip merge commits and amends\nif [[ \"$COMMAND\" == *\"--amend\"* ]] || [[ \"$COMMAND\" == *\"merge\"* ]]; then\n  exit 0\nfi\n\n# ═══════════════════════════════════════════════════════════════════\n# Thresholds — only enforce test coverage for significant changes\n# ═══════════════════════════════════════════════════════════════════\nMIN_FILES=5        # Minimum number of changed source files to trigger\nMIN_LINES=50       # OR minimum number of added lines to trigger\n\n# Get staged files (Added, Copied, Modified)\nSTAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null)\n\nif [ -z \"$STAGED_FILES\" ]; then\n  exit 0\nfi\n\n# ═══════════════════════════════════════════════════════════════════\n# Filter to source files only (skip config, docs, styles, assets)\n# ═══════════════════════════════════════════════════════════════════\nSOURCE_FILES=\"\"\nTEST_FILES=\"\"\n\nwhile IFS= read -r file; do\n  # Skip files that don't need tests\n  case \"$file\" in\n    # Config and metadata\n    *.md|*.txt|*.json|*.yaml|*.yml|*.toml|*.ini|*.cfg|*.conf) continue ;;\n    *.lock|*.sum) continue ;;\n    .gitignore|.env*|Dockerfile*|docker-compose*|Makefile) continue ;;\n    LICENSE*|CHANGELOG*|README*) continue ;;\n    \n    # Styles and assets\n    *.css|*.scss|*.sass|*.less|*.svg|*.png|*.jpg|*.gif|*.ico|*.woff*) continue ;;\n    \n    # Generated / build output\n    dist/*|build/*|node_modules/*|vendor/*|target/*|__pycache__/*) continue ;;\n    \n    # Migration files\n    **/migrations/*|**/migrate/*) continue ;;\n  esac\n\n  # Identify test files vs source files\n  case \"$file\" in\n    # Test file patterns across languages\n    *test*|*spec*|*_test.*|*.test.*|*.spec.*|*Test.*|*Spec.*)\n      TEST_FILES=\"$TEST_FILES$file\\n\"\n      ;;\n    # Test directories\n    test/*|tests/*|spec/*|__tests__/*|**/test/*|**/tests/*|**/spec/*|**/__tests__/*)\n      TEST_FILES=\"$TEST_FILES$file\\n\"\n      ;;\n    # Source files that should have tests\n    *.js|*.jsx|*.ts|*.tsx|*.py|*.go|*.rs|*.rb|*.java|*.kt|*.cs|*.swift|*.ex|*.exs|*.php)\n      SOURCE_FILES=\"$SOURCE_FILES$file\\n\"\n      ;;\n  esac\ndone <<< \"$STAGED_FILES\"\n\n# Count source files (excluding test files)\nSOURCE_COUNT=$(echo -e \"$SOURCE_FILES\" | grep -c '[^[:space:]]' 2>/dev/null || echo 0)\n\nif [ \"$SOURCE_COUNT\" -eq 0 ]; then\n  exit 0\nfi\n\n# Count added lines in source files\nADDED_LINES=0\nwhile IFS= read -r file; do\n  [ -z \"$file\" ] && continue\n  COUNT=$(git diff --cached --numstat \"$file\" 2>/dev/null | awk '{print $1}' | grep -v '-' || echo 0)\n  ADDED_LINES=$((ADDED_LINES + COUNT))\ndone <<< \"$(echo -e \"$SOURCE_FILES\")\"\n\n# Check if this commit is significant enough to require tests\nif [ \"$SOURCE_COUNT\" -lt \"$MIN_FILES\" ] && [ \"$ADDED_LINES\" -lt \"$MIN_LINES\" ]; then\n  exit 0\nfi\n\n# ═══════════════════════════════════════════════════════════════════\n# Check for missing test files\n# ═══════════════════════════════════════════════════════════════════\nMISSING_TESTS=\"\"\nCHECKED=0\n\nfind_test_file() {\n  local src_file=\"$1\"\n  local basename=$(basename \"$src_file\")\n  local dirname=$(dirname \"$src_file\")\n  local name_no_ext=\"${basename%.*}\"\n  local ext=\"${basename##*.}\"\n\n  # Common test file patterns to search for\n  local patterns=(\n    # Same directory patterns\n    \"${dirname}/${name_no_ext}.test.${ext}\"\n    \"${dirname}/${name_no_ext}.spec.${ext}\"\n    \"${dirname}/${name_no_ext}_test.${ext}\"\n    \"${dirname}/test_${name_no_ext}.${ext}\"\n    \"${dirname}/${name_no_ext}Test.${ext}\"\n    \"${dirname}/${name_no_ext}_test.go\"\n    # __tests__ directory (JS/TS convention)\n    \"${dirname}/__tests__/${basename}\"\n    \"${dirname}/__tests__/${name_no_ext}.test.${ext}\"\n    \"${dirname}/__tests__/${name_no_ext}.spec.${ext}\"\n    # Parallel test directory\n    \"$(echo \"$dirname\" | sed 's|^src/|tests/|;s|^lib/|tests/|')/${name_no_ext}.test.${ext}\"\n    \"$(echo \"$dirname\" | sed 's|^src/|test/|;s|^lib/|test/|')/${name_no_ext}.test.${ext}\"\n    \"$(echo \"$dirname\" | sed 's|^src/|tests/|;s|^lib/|tests/|')/test_${name_no_ext}.${ext}\"\n    \"$(echo \"$dirname\" | sed 's|^src/|test/|;s|^lib/|test/|')/test_${name_no_ext}.${ext}\"\n    # Go convention\n    \"${dirname}/${name_no_ext}_test.go\"\n    # Python convention\n    \"tests/test_${name_no_ext}.py\"\n    \"test/test_${name_no_ext}.py\"\n    \"${dirname}/tests/test_${name_no_ext}.py\"\n    # Rust convention\n    \"tests/${name_no_ext}.rs\"\n  )\n\n  for pattern in \"${patterns[@]}\"; do\n    if [ -f \"$pattern\" ]; then\n      return 0\n    fi\n  done\n\n  # Also check if the file is already staged with a test file in this commit\n  if echo -e \"$TEST_FILES\" | grep -qi \"$name_no_ext\" 2>/dev/null; then\n    return 0\n  fi\n\n  return 1\n}\n\nwhile IFS= read -r file; do\n  [ -z \"$file\" ] && continue\n  CHECKED=$((CHECKED + 1))\n\n  if ! find_test_file \"$file\"; then\n    MISSING_TESTS=\"$MISSING_TESTS  - $file\\n\"\n  fi\ndone <<< \"$(echo -e \"$SOURCE_FILES\")\"\n\n# ═══════════════════════════════════════════════════════════════════\n# Report results\n# ═══════════════════════════════════════════════════════════════════\nif [ -n \"$MISSING_TESTS\" ]; then\n  MISSING_COUNT=$(echo -e \"$MISSING_TESTS\" | grep -c '[^[:space:]]' 2>/dev/null || echo 0)\n\n  echo \"\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\n  echo \"🧪 TEST COVERAGE WARNING: $MISSING_COUNT source file(s) have no tests\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\n  echo \"\"\n  echo \"This is a significant commit ($SOURCE_COUNT source files, ~$ADDED_LINES lines added).\"\n  echo \"The following source files have no corresponding test files:\"\n  echo \"\"\n  echo -e \"$MISSING_TESTS\"\n  echo \"\"\n  echo \"Please consider adding tests for these files before committing.\"\n  echo \"Tests help catch regressions and document expected behavior.\"\n  echo \"\"\n  echo \"Common test file patterns:\"\n  echo \"  JS/TS:   foo.test.ts, foo.spec.ts, __tests__/foo.test.ts\"\n  echo \"  Python:  test_foo.py, tests/test_foo.py\"\n  echo \"  Go:      foo_test.go\"\n  echo \"  Rust:    tests/foo.rs or #[cfg(test)] mod tests\"\n  echo \"  Ruby:    spec/foo_spec.rb\"\n  echo \"  Java:    FooTest.java\"\n  echo \"\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\n  exit 1\nfi\n\nexit 0"
+  },
+  "_usage": {
+    "install": "Copy scripts/test-coverage-check.sh to your project or ~/.claude/scripts/",
+    "configure": "Add this hook configuration to your ~/.claude/settings.json or .claude/settings.json",
+    "thresholds": {
+      "MIN_FILES": "5 — minimum source files changed to trigger (adjustable in script)",
+      "MIN_LINES": "50 — minimum lines added to trigger (adjustable in script)"
+    },
+    "skipped_files": [
+      "Config files (json, yaml, toml, etc.)",
+      "Documentation (md, txt, README)",
+      "Styles and assets (css, images, fonts)",
+      "Generated/build output (dist/, build/, node_modules/)",
+      "Database migrations"
+    ],
+    "supported_languages": [
+      "JavaScript/TypeScript (.test.ts, .spec.ts, __tests__/)",
+      "Python (test_*.py, tests/test_*.py)",
+      "Go (*_test.go)",
+      "Rust (tests/*.rs)",
+      "Ruby (*_spec.rb)",
+      "Java/Kotlin (*Test.java)",
+      "C# (*Test.cs)",
+      "Swift (*Tests.swift)",
+      "Elixir (*_test.exs)",
+      "PHP (*Test.php)"
+    ],
+    "note": "This hook only triggers for significant commits (5+ source files OR 50+ lines added). Small fixes, config changes, and docs are never blocked. Adjust MIN_FILES and MIN_LINES in the script to tune sensitivity."
+  }
+}

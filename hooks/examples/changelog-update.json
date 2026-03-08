@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Ensure CHANGELOG.md is updated with every commit — blocks commits if changelog is missing or unchanged",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/changelog-update.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "_scripts": {
+    "changelog-update.sh": "#!/bin/bash\n\n# Check if this is a git commit command\nCOMMAND=$(echo \"$TOOL_INPUT\" | jq -r '.command // empty')\n\nif [[ \"$COMMAND\" != *\"git commit\"* ]]; then\n  exit 0\nfi\n\n# Skip merge commits and amends\nif [[ \"$COMMAND\" == *\"--amend\"* ]] || [[ \"$COMMAND\" == *\"merge\"* ]]; then\n  exit 0\nfi\n\n# Check if CHANGELOG.md exists\nif [ ! -f \"CHANGELOG.md\" ]; then\n  echo \"\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\n  echo \"📋 CHANGELOG REQUIRED: No CHANGELOG.md found in this project\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\n  echo \"\"\n  echo \"Please create a CHANGELOG.md before committing. Use this format:\"\n  echo \"\"\n  echo \"  # Changelog\"\n  echo \"\"\n  echo \"  ## [Unreleased]\"\n  echo \"\"\n  echo \"  ### Added\"\n  echo \"  - Description of what was added\"\n  echo \"\"\n  echo \"  ### Changed\"\n  echo \"  - Description of what changed\"\n  echo \"\"\n  echo \"  ### Fixed\"\n  echo \"  - Description of what was fixed\"\n  echo \"\"\n  echo \"Categories: Added, Changed, Deprecated, Removed, Fixed, Security\"\n  echo \"Reference: https://keepachangelog.com\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\n  exit 1\nfi\n\n# Check if CHANGELOG.md is staged for this commit\nSTAGED_FILES=$(git diff --cached --name-only 2>/dev/null)\n\nif echo \"$STAGED_FILES\" | grep -q \"^CHANGELOG.md$\"; then\n  # CHANGELOG.md is staged — all good\n  exit 0\nfi\n\n# CHANGELOG.md exists but is not staged — check if it was modified but not staged\nUNSTAGED=$(git diff --name-only 2>/dev/null)\nif echo \"$UNSTAGED\" | grep -q \"^CHANGELOG.md$\"; then\n  echo \"\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\n  echo \"📋 CHANGELOG NOT STAGED: CHANGELOG.md has changes but is not staged\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\n  echo \"\"\n  echo \"CHANGELOG.md was modified but not added to this commit.\"\n  echo \"Please stage it before committing:\"\n  echo \"\"\n  echo \"  git add CHANGELOG.md\"\n  echo \"\"\n  echo \"═══════════════════════════════════════════════════════════════════\"\n  exit 1\nfi\n\n# CHANGELOG.md exists but has no changes — it wasn't updated for this commit\necho \"\"\necho \"═══════════════════════════════════════════════════════════════════\"\necho \"📋 CHANGELOG UPDATE REQUIRED\"\necho \"═══════════════════════════════════════════════════════════════════\"\necho \"\"\necho \"CHANGELOG.md was not updated for this commit.\"\necho \"\"\n\n# Show what's being committed to help write the changelog entry\necho \"Staged changes in this commit:\"\ngit diff --cached --stat 2>/dev/null\necho \"\"\n\n# Extract the commit message from the command if possible\nCOMMIT_MSG=$(echo \"$COMMAND\" | grep -oP '(?<=-m\\s[\\''\\''\"]).*?(?=[\\''\\''\"])' 2>/dev/null || echo \"$COMMAND\" | grep -oP '(?<=-m )\\S+' 2>/dev/null || echo '')\n\necho \"Please update CHANGELOG.md under the [Unreleased] section.\"\necho \"Use the appropriate category:\"\necho \"\"\necho \"  ### Added      — new features\"\necho \"  ### Changed    — changes to existing functionality\"\necho \"  ### Deprecated — features being removed soon\"\necho \"  ### Removed    — features that were removed\"\necho \"  ### Fixed      — bug fixes\"\necho \"  ### Security   — vulnerability fixes\"\necho \"\"\necho \"Then stage and include it in the commit:\"\necho \"\"\necho \"  git add CHANGELOG.md\"\necho \"\"\necho \"═══════════════════════════════════════════════════════════════════\"\nexit 1"
+  },
+  "_usage": {
+    "install": "Copy scripts/changelog-update.sh to your project or ~/.claude/scripts/",
+    "configure": "Add this hook configuration to your ~/.claude/settings.json or .claude/settings.json",
+    "format": "Follows Keep a Changelog format (https://keepachangelog.com)",
+    "note": "This hook triggers before every git commit and blocks it if CHANGELOG.md is missing, not updated, or not staged. It skips merge commits and amends."
+  }
+}
