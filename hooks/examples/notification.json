@@ -1,31 +1,40 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
-  "description": "Desktop notifications when Claude needs attention or completes tasks",
+  "description": "Desktop notifications when Claude needs attention, requests permission, or completes tasks",
   "hooks": {
-    "Notification": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "scripts/notify.sh"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "scripts/task-complete.sh"
+            "command": "osascript -e 'display notification \"Claude has finished\" with title \"Claude Code\" sound name \"Purr\"' 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Claude is waiting for permission\" with title \"Claude Code\" sound name \"Funk\"' 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Claude needs your attention\" with title \"Claude Code\" sound name \"Funk\"' 2>/dev/null || true"
           }
         ]
       }
     ]
   },
-  "_scripts": {
-    "notify.sh": "#!/bin/bash\n\n# Cross-platform notification\nMESSAGE=\"${NOTIFICATION_MESSAGE:-Claude needs your attention}\"\n\nif command -v notify-send &> /dev/null; then\n  # Linux\n  notify-send \"Claude Code\" \"$MESSAGE\"\nelif command -v osascript &> /dev/null; then\n  # macOS\n  osascript -e \"display notification \\\"$MESSAGE\\\" with title \\\"Claude Code\\\"\"\nelif command -v powershell.exe &> /dev/null; then\n  # Windows (WSL)\n  powershell.exe -Command \"[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); [System.Windows.Forms.MessageBox]::Show('$MESSAGE', 'Claude Code')\"\nfi",
-    "task-complete.sh": "#!/bin/bash\n\n# Play sound and show notification\nMESSAGE=\"Task completed!\"\n\nif command -v notify-send &> /dev/null; then\n  notify-send \"Claude Code\" \"$MESSAGE\"\n  paplay /usr/share/sounds/freedesktop/stereo/complete.oga 2>/dev/null || true\nelif command -v osascript &> /dev/null; then\n  osascript -e \"display notification \\\"$MESSAGE\\\" with title \\\"Claude Code\\\" sound name \\\"Glass\\\"\"\nfi"
+  "_notes": {
+    "linux": "Replace osascript commands with: notify-send \"Claude Code\" \"<message>\"",
+    "windows_wsl": "Replace osascript commands with: powershell.exe -Command \"[System.Windows.Forms.MessageBox]::Show('<message>', 'Claude Code')\""
   }
 }
