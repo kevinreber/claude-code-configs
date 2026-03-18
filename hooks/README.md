@@ -9,6 +9,7 @@ Hooks are shell commands that execute in response to Claude Code events.
 | `PreToolUse` | Before any tool executes | Validation, confirmation prompts |
 | `PostToolUse` | After any tool executes | Logging, notifications, auto-formatting |
 | `Notification` | When Claude wants your attention | Desktop alerts |
+| `PermissionRequest` | When Claude needs permission to proceed | Permission alerts, sound notifications |
 | `Stop` | When Claude finishes a response | Cleanup, summaries |
 
 ## Configuration
