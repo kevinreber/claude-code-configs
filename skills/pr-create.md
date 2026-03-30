@@ -1,100 +1,54 @@
 ---
-name: pr-update
-description: Update an existing PR's title and description to reflect the latest commits on the branch. Use when the user has pushed new commits to an existing PR and wants the PR metadata to stay accurate.
+name: pr-create
+description: Create a pull request with proper formatting. Use when the user asks to create a PR, make a pull request, open a PR, or wants to submit their changes for review.
 ---
 
-# PR Update
+# PR Create
 
-Update the title and description of an existing pull request to accurately reflect all commits currently on the branch.
+Create a pull request with proper formatting following project guidelines.
 
 ## Instructions
 
-1. **Get current branch info:**
-   ```bash
-   git branch --show-current
-   git log origin/main..HEAD --oneline
-   ```
-   - If no commits ahead of main, nothing to do — inform user
-
-2. **Check for an open PR on this branch:**
-   ```bash
-   gh pr view --json number,title,body,url 2>/dev/null
-   ```
-   - If no PR exists, suggest running `/pr-create` instead and stop
-
-3. **Read all commits and full diff:**
-   ```bash
-   git log origin/main..HEAD --format="%H %s%n%b" --no-merges
-   git diff origin/main...HEAD --stat
-   git diff origin/main...HEAD
-   ```
-   - Read the full diff carefully to understand the scope of changes
-
-4. **Detect PR type — check BOTH the existing body AND the diff:**
-   - **Existing body signals**: Does the current PR body contain `## Feature Diagram`, `## Design Trade-offs`, `## Known Limitations`, or Mermaid blocks? If yes, it's already a feature PR — preserve the extended format.
-   - **Diff signals**: Classify as a feature PR if any are true:
-     - Has `feat:` or `feat(...):` commits
-     - Adds new user-facing functionality, new API surface, or new subsystems
-     - Changes more than ~200 lines across multiple files
-     - Introduces new abstractions, patterns, or dependencies
-   - If either check indicates a feature PR, use the **Feature PR Format**
-
-5. **Analyze what changed:**
-   - What is the primary purpose of this PR? (1 sentence)
-   - What are the key changes? (bullet list)
-   - Are there any breaking changes, migrations, or notable considerations?
-
-6. **Context discovery — scan the diff for rich context opportunities:**
+1. Run `git status` to check current branch and any uncommitted changes
+2. If there are uncommitted changes:
+   - Analyze the staged/unstaged changes using `git diff --cached` and `git diff`
+   - Generate a smart commit message following Conventional Commits format (see /commit-changes skill)
+   - Stage files if needed: `git add -A` or specific files
+   - Show the generated commit message to the user
+   - If approved, commit with the message using HEREDOC format
+   - Add `Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>` to commit message
+3. Run `git log origin/main..HEAD --oneline` to see commits that will be included in the PR
+4. Run `git diff origin/main...HEAD` to understand all changes in the branch
+5. Analyze all commits and changes to draft a comprehensive PR description
+6. **Determine PR type** — classify as a **feature PR** if any of these are true:
+   - Has `feat:` or `feat(...):`commits
+   - Adds new user-facing functionality, new API surface, or new subsystems
+   - Changes more than ~200 lines across multiple files
+   - Introduces new abstractions, patterns, or dependencies
+7. **Context discovery — scan the diff for rich context opportunities:**
    - **Classification/routing decisions**: If the diff adds, removes, or moves items between categories, registries, or config groups, generate a classification table showing each item, its category, and the rationale.
    - **Multi-component interactions**: If the diff touches multiple modules/packages that interact (caller/callee, parent/child, producer/consumer), generate a Mermaid diagram showing how they relate at runtime.
    - **Configuration/mapping changes**: If the diff modifies mappings, enums, feature flags, or permission lists, generate a table showing before→after states or the full current mapping.
    - **API/interface changes**: If the diff adds or modifies tool definitions, endpoints, or public interfaces, document the new interface with parameters and usage examples.
    - **Structural changes**: If the diff adds new directories, moves files, or reorganizes module structure, include a file tree showing the new layout. For file moves/renames, show a before→after tree to make the reorganization clear.
    - These context tables, diagrams, and file trees should appear in the appropriate feature PR sections (Summary for tables, Feature Diagram for diagrams, etc.)
-
-7. **Generate updated PR title:**
-   - Follow Conventional Commits style: `<type>(<scope>): <subject>`
-   - Max ~72 chars, imperative mood
-   - Should reflect the primary purpose across ALL commits, not just the latest
-
-8. **Generate updated PR description:**
-   - For **non-feature PRs** (bug fix, chore, refactor, docs):
+   - For non-feature PRs, still add a brief context table or file tree in the Summary if the diff contains classification/mapping or structural changes — reviewers always benefit from seeing the concrete values.
+8. Check if the current branch is pushed to remote:
+   - If not pushed or behind remote, run `git push -u origin <branch-name>`
+9. Create the PR using `gh pr create` with proper format:
+   - Title should be clear and descriptive
+   - For **non-feature PRs** (bug fix, chore, refactor, docs), use the standard body:
      ```
      ## Summary
-     - <bullet 1>
-     - <bullet 2>
+     - Bullet points describing the changes
 
      ## Testing Done
-     - [ ] <test step 1>
-     - [ ] <test step 2>
+     - [ ] Checkbox items for testing steps
      ```
-   - For **feature PRs**, use the Feature PR Format below
-
-9. **Preserve custom content:**
-   - Compare the existing PR body with the generated one section-by-section
-   - Preserve any custom sections the user added that aren't in the template (e.g., linked issues, reviewer notes, deployment instructions)
-   - For sections that exist in both, merge intelligently: keep user-written prose and update factual content (bullet points, tables, diagrams) to reflect the current diff
-   - Never silently drop content — if removing a section, mention it in the diff shown to the user
-
-10. **Show proposed title + description to user and ask for approval.**
-    - Present current title vs proposed title
-    - Present proposed description (highlight what changed from current)
-    - Ask: "Update PR with these changes? (y/n/edit)"
-
-11. **Apply the update:**
-    ```bash
-    gh pr edit --title "<new title>" --body "$(cat <<'EOF'
-    <description>
-    EOF
-    )"
-    ```
-
-12. **Confirm:**
-    ```bash
-    gh pr view --json title,url
-    ```
-    - Show the PR URL so user can verify
-
+   - For **feature PRs**, use the extended body (see Feature PR Format below)
+10. Use a HEREDOC for the PR body to ensure correct formatting
+11. Return the PR URL to the user
+12. Remind them to request reviewers if needed
 13. **Generate follow-up actions checklist:**
     Scan the diff and commits to identify follow-up items. Only include items that are actually relevant — skip any that don't apply.
 
@@ -151,11 +105,13 @@ Concrete inputs/scenarios anyone can run to verify the feature works:
 
 ## Important Notes
 
-- Always analyze ALL commits in the branch vs origin/main, not just the latest push
-- If the user has manually customized the PR description, preserve any sections not in the standard template (e.g., linked issues, custom notes)
-- Never update the PR without user confirmation
-- If `gh` is not authenticated, tell the user to run `gh auth login`
+- Always analyze ALL commits in the branch, not just the latest one
+- The Summary should accurately reflect the purpose and scope of changes
 - For feature PRs: the diagram, trade-offs, test steps, and limitations are **required** — don't skip them even if brief
 - Trade-offs table should capture real decisions made during implementation, not hypotheticals
-- Context discovery tables should reflect actual values from the diff, not placeholders — a reviewer should learn something concrete by reading them
-- When updating a feature PR with new commits, update existing sections to reflect the new state rather than appending — the PR description should read as a coherent document, not a changelog
+- Test steps should use real example values (not `<your value>`) so anyone can copy-paste and run them
+- Default base branch is `main` (check git config if unsure)
+- If there are uncommitted changes, commit them first with a smart message
+- Use Conventional Commits format for commit messages (feat, fix, docs, etc.)
+- Always add Co-Authored-By footer to commits
+- Use HEREDOC format for multi-line commit messages and PR bodies
