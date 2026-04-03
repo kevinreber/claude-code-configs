@@ -83,6 +83,15 @@ Hooks receive context through environment variables:
 
 See the individual files in this directory for ready-to-use hook configurations.
 
+## Platform Notes
+
+The notification hooks in `.claude/settings.json` use `osascript` for macOS desktop notifications. These are **macOS-only**. On other platforms, replace with your preferred notification method:
+
+- **Linux:** `notify-send "Claude Code" "Claude has finished"` (requires `libnotify`)
+- **Windows (WSL):** `powershell.exe -Command "New-BurntToastNotification -Text 'Claude Code','Claude has finished'"` (requires BurntToast module)
+
+The `2>/dev/null || true` suffix ensures hooks fail silently on unsupported platforms.
+
 ## Tips
 
 1. **Keep hooks fast** - Slow hooks degrade the experience
