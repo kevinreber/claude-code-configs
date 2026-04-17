@@ -171,6 +171,44 @@ List all **PRs**, **Docs**, **Jira tickets** with full URLs.
 - **Environment friction** — prompts mentioning docker, error, setup, not working, cert, permission, etc.
 - **Iterative refinement** — prompts with "how's this look", "is this correct", "what do you think"
 
+### Transcript-derived sections (NEW — from v2 activity-db)
+
+Before writing the daily log, trigger enrichment for today so the activity-db has fresh transcript-derived rows:
+
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py enrich-from-transcripts --date YYYY-MM-DD
+```
+
+Then query the enriched data and render these sections into the markdown (if there's any data for the day). These sections appear BELOW "Patterns & Optimization Opportunities" and BEFORE "Immutability":
+
+**Files Touched**
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py query --sql "SELECT DISTINCT json_extract(metadata, '\$.file_path') AS file FROM activities WHERE date='YYYY-MM-DD' AND category='file_edit' ORDER BY file"
+```
+Render as a grouped list under "## Files Touched" — group by project folder where possible, show edit counts.
+
+**Commands Run**
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py query --sql "SELECT json_extract(metadata, '\$.command') AS cmd, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category='command' GROUP BY cmd ORDER BY n DESC LIMIT 20"
+```
+Render under "## Commands Run" — top distinct bash commands by frequency.
+
+**Tool Usage Summary**
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py query --sql "SELECT json_extract(metadata, '\$.tool') AS tool, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category IN ('tool_use','file_edit','command','mcp_call','plan') GROUP BY tool ORDER BY n DESC"
+```
+Render under "## Tool Usage" — inventory of tool invocations by type.
+
+**MCP Calls by Server**
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py query --sql "SELECT json_extract(metadata, '\$.mcp_server') AS server, json_extract(metadata, '\$.mcp_tool') AS tool, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category='mcp_call' GROUP BY server, tool ORDER BY n DESC LIMIT 15"
+```
+Render under "## MCP Calls".
+
+Only include each section if it has rows. If enrichment returned no data for the day (e.g., transcripts were cleaned up or the sessions aren't in the DB), omit the transcript-derived sections entirely and add a one-line note at the end of the markdown: `> Transcript enrichment unavailable for this date (no session data or transcripts deleted).`
+
+These sections get written both to the local `.md` file AND pushed to the Google Doc via the existing `--sync` path — the existing sync logic doesn't need any changes, since it just uploads whatever is in the markdown file.
+
 ### Immutability
 **CRITICAL:** Before writing, check if the file already exists.
 - If it exists: **DO NOT overwrite.** Tell the user and ask if they want to regenerate.

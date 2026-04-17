@@ -245,6 +245,43 @@ Analyze the day's activity for optimization opportunities that span tools:
 - **Deep work vs. coordination:** "3 hours deep coding (Claude+GitHub), 1.5 hours coordination (Slack+Jira), 0.5 hours docs"
 ```
 
+### Phase 3.5: Transcript-derived sections (NEW — from v2 activity-db)
+
+Before writing the recap, trigger enrichment so the activity-db has fresh transcript-derived rows for the day:
+
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py enrich-from-transcripts --date YYYY-MM-DD
+```
+
+Then query the enriched data and render these sections into the markdown (if any rows exist for the day). Add them as additional sub-sections under "By Source → Claude Code" OR as their own top-level sections after "By Source" — your call based on what reads best.
+
+**Files Touched**
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py query --sql "SELECT DISTINCT json_extract(metadata, '\$.file_path') AS file FROM activities WHERE date='YYYY-MM-DD' AND category='file_edit' ORDER BY file"
+```
+Render a list of files, grouped by project/folder. Correlate with GitHub PRs or commits that touched the same paths.
+
+**Commands Run**
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py query --sql "SELECT json_extract(metadata, '\$.command') AS cmd, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category='command' GROUP BY cmd ORDER BY n DESC LIMIT 20"
+```
+Highlight clusters — "7 `pytest` runs" suggests testing activity; "3 `git push` calls" correlates with PR updates.
+
+**MCP Calls by Server**
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py query --sql "SELECT json_extract(metadata, '\$.mcp_server') AS server, json_extract(metadata, '\$.mcp_tool') AS tool, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category='mcp_call' GROUP BY server, tool ORDER BY n DESC LIMIT 15"
+```
+Cross-reference with the recap's other sections: MCP calls to a Jira server should correlate with Jira activity; MCP calls to a Google Docs server should correlate with the Docs section. Good "cross-tool sanity check."
+
+**Tool Usage Summary** (optional — more useful for `/daily-review`)
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py query --sql "SELECT json_extract(metadata, '\$.tool') AS tool, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category IN ('tool_use','file_edit','command','mcp_call','plan') GROUP BY tool ORDER BY n DESC"
+```
+
+Only include a section if it has rows. If the day's sessions haven't been enriched (transcripts deleted, no sessions row), omit and note: `> Transcript enrichment unavailable for this date.`
+
+These sections land in the markdown file and propagate to the Google Doc via the existing `--sync` path — no changes needed to the sync flow.
+
 ---
 
 ### Phase 4: Immutability check

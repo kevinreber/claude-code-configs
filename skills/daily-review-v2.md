@@ -226,6 +226,35 @@ Write **specific, concrete impact statements** derived from the actual prompts. 
 #### Patterns & Optimization Opportunities
 Same as `/daily-review`: repeated skills, context switches, manual data pasting, environment friction, iterative refinement.
 
+#### Transcript-derived sections (NEW — requires prior enrichment)
+
+Before rendering, run `uv run python main.py enrich-from-transcripts --date YYYY-MM-DD` to ensure today's sessions have transcript-derived rows in `activities`. Then query those rows and render:
+
+**Files touched**
+```bash
+uv run python main.py query --sql "SELECT DISTINCT json_extract(metadata, '$.file_path') AS file_path FROM activities WHERE date='YYYY-MM-DD' AND category='file_edit' ORDER BY file_path"
+```
+Group by project/folder, show counts of edits per file.
+
+**Commands run**
+```bash
+uv run python main.py query --sql "SELECT json_extract(metadata, '$.command') AS cmd, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category='command' GROUP BY cmd ORDER BY n DESC LIMIT 15"
+```
+Show top distinct bash commands by frequency.
+
+**Tool usage summary**
+```bash
+uv run python main.py query --sql "SELECT json_extract(metadata, '$.tool') AS tool, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category IN ('tool_use','file_edit','command','mcp_call','plan') GROUP BY tool ORDER BY n DESC"
+```
+Show total tool invocations, broken down by tool name.
+
+**MCP call summary** (for cross-tool work)
+```bash
+uv run python main.py query --sql "SELECT json_extract(metadata, '$.mcp_server') AS server, json_extract(metadata, '$.mcp_tool') AS tool, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category='mcp_call' GROUP BY server, tool ORDER BY n DESC LIMIT 10"
+```
+
+Only include each section if there's data. If the day's sessions haven't been enriched (no activities with `category IN ('tool_use','file_edit','command','mcp_call')`), skip these sections silently or show a one-line note.
+
 ### Step 4: Store the generated summary
 
 ```bash

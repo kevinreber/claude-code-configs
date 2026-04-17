@@ -285,6 +285,18 @@ Generate markdown output for the terminal AND store as summary.
 ### Confluence / Slack / Google Docs / Claude Code
 (same format as /daily-recap)
 
+### Claude transcript-derived (NEW — requires prior enrichment)
+
+Before rendering, run `uv run python main.py enrich-from-transcripts --date YYYY-MM-DD` to ensure today's sessions have transcript-derived rows. Then include these cross-tool sections if there's data:
+
+**Files touched** — `SELECT DISTINCT json_extract(metadata, '$.file_path') FROM activities WHERE date='YYYY-MM-DD' AND category='file_edit'`. Correlate with GitHub PRs / commits touching the same files.
+
+**Commands run** — `SELECT json_extract(metadata, '$.command') AS cmd, COUNT(*) FROM activities WHERE date='YYYY-MM-DD' AND category='command' GROUP BY cmd`. Highlight clusters (e.g., "7 pytest runs" → testing activity).
+
+**MCP calls by server** — `SELECT json_extract(metadata, '$.mcp_server'), COUNT(*) FROM activities WHERE date='YYYY-MM-DD' AND category='mcp_call' GROUP BY 1`. Correlate with Jira/Confluence/Google Docs actions seen from the respective MCP sources.
+
+Only include sections if there's data. These sections connect "what Claude did locally" with "what shows up in external systems," which is the core cross-tool insight of the recap.
+
 ---
 
 ## Impact & Accomplishments
