@@ -154,6 +154,7 @@ install_activity_db() {
 
     if [[ "$DRY_RUN" == "true" ]]; then
         echo "Would copy: activity-db/main.py -> $dest/main.py"
+        echo "Would copy: activity-db/transcript_parser.py -> $dest/transcript_parser.py"
         echo "Would copy: activity-db/pyproject.toml -> $dest/pyproject.toml"
         return
     fi
@@ -162,12 +163,14 @@ install_activity_db() {
 
     if [[ "$USE_SYMLINK" == "true" ]]; then
         ln -sf "$SCRIPT_DIR/activity-db/main.py" "$dest/main.py"
+        ln -sf "$SCRIPT_DIR/activity-db/transcript_parser.py" "$dest/transcript_parser.py"
         ln -sf "$SCRIPT_DIR/activity-db/pyproject.toml" "$dest/pyproject.toml"
-        print_info "Symlinked: main.py, pyproject.toml"
+        print_info "Symlinked: main.py, transcript_parser.py, pyproject.toml"
     else
         cp "$SCRIPT_DIR/activity-db/main.py" "$dest/main.py"
+        cp "$SCRIPT_DIR/activity-db/transcript_parser.py" "$dest/transcript_parser.py"
         cp "$SCRIPT_DIR/activity-db/pyproject.toml" "$dest/pyproject.toml"
-        print_info "Copied: main.py, pyproject.toml"
+        print_info "Copied: main.py, transcript_parser.py, pyproject.toml"
     fi
 
     # Install Python dependencies if uv is available

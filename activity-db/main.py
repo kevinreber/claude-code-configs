@@ -96,6 +96,25 @@ def cmd_init(args):
         )
     """)
 
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            date TEXT NOT NULL,
+            project TEXT NOT NULL,
+            project_path TEXT NOT NULL,
+            prompt_count INTEGER NOT NULL DEFAULT 0,
+            duration_minutes INTEGER NOT NULL DEFAULT 0,
+            is_personal INTEGER NOT NULL DEFAULT 0,
+            device_id TEXT NOT NULL DEFAULT '',
+            first_prompt_at TEXT NOT NULL,
+            last_prompt_at TEXT NOT NULL,
+            metadata TEXT,
+            enriched_at TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+
     # Indexes for common queries
     conn.execute("CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(date)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_activities_source ON activities(source)")
@@ -103,11 +122,13 @@ def cmd_init(args):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_activities_tag ON activities(tag)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_summaries_date ON summaries(date)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_summaries_type ON summaries(type)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_date ON sessions(date)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_session_id ON sessions(session_id)")
 
     conn.commit()
     conn.sync()
     print("Database initialized at", DB_FILE)
-    print("Tables: activities, summaries, goals")
+    print("Tables: activities, summaries, goals, sessions")
 
 
 def cmd_write(args):
@@ -266,6 +287,191 @@ def cmd_sync(args):
     conn = get_connection()
     conn.sync()
     print("Synced to Turso.")
+
+
+def _ingest_orphan_transcript(conn, transcript_path, session_id):
+    """Create a sessions row for a transcript that has no DB entry yet.
+
+    Derives date, project, first/last prompt times from the transcript itself.
+    Returns the new sessions.id, or None if the transcript can't be read.
+    """
+    from datetime import datetime
+    first_ts = None
+    last_ts = None
+    project_path = ""
+    prompt_count = 0
+    try:
+        with open(transcript_path, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                try:
+                    obj = json.loads(line)
+                except Exception:
+                    continue
+                ts = obj.get("timestamp")
+                if isinstance(ts, str):
+                    if first_ts is None:
+                        first_ts = ts
+                    last_ts = ts
+                if obj.get("type") == "user":
+                    prompt_count += 1
+                # cwd hints at project path
+                if not project_path:
+                    pp = obj.get("cwd") or (obj.get("message", {}) if isinstance(obj.get("message"), dict) else {}).get("cwd")
+                    if isinstance(pp, str):
+                        project_path = pp
+    except Exception:
+        return None
+    if not first_ts:
+        return None
+
+    # Derive date (local) from first timestamp
+    try:
+        ts_norm = first_ts[:-1] + "+00:00" if first_ts.endswith("Z") else first_ts
+        date = datetime.fromisoformat(ts_norm).astimezone().strftime("%Y-%m-%d")
+    except Exception:
+        date = first_ts[:10]
+
+    project = project_path.rstrip("/").split("/")[-1] if project_path else "<unknown>"
+    cur = conn.execute(
+        """INSERT INTO sessions (session_id, date, project, project_path, prompt_count,
+                                 duration_minutes, is_personal, device_id,
+                                 first_prompt_at, last_prompt_at, metadata)
+           VALUES (?, ?, ?, ?, ?, 0, 0, '', ?, ?, ?)""",
+        (
+            session_id,
+            date,
+            project,
+            project_path,
+            prompt_count,
+            first_ts,
+            last_ts or first_ts,
+            json.dumps({"source": "enrich-from-transcripts/orphan-ingest"}),
+        ),
+    )
+    return cur.lastrowid
+
+
+def cmd_enrich_from_transcripts(args):
+    """Parse per-session transcripts and write structured events into the activities table.
+
+    Sources: ~/.claude/projects/<proj-hash>/<session-id>.jsonl
+    Targets: activities table (new rows with category in tool_use|file_edit|command|mcp_call|plan|paste)
+
+    Tracks processed sessions via sessions.enriched_at to avoid double-processing.
+    Also ingests orphan transcripts (disk file exists but no sessions row) by creating
+    sessions rows from transcript metadata, unless --no-orphans is set.
+    """
+    import glob
+    from pathlib import Path
+
+    # Late import so bare imports of main.py don't force this dependency to exist
+    from transcript_parser import parse_transcript
+
+    conn = get_connection()
+
+    # Build an index of transcript files: session_id → path
+    projects_root = CLAUDE_DIR / "projects"
+    transcript_index = {}
+    for p in glob.glob(str(projects_root / "*" / "*.jsonl")):
+        p = Path(p)
+        transcript_index[p.stem] = p
+    print(f"Found {len(transcript_index)} transcript files on disk")
+
+    # Optionally ingest orphan transcripts as new sessions rows
+    orphans_ingested = 0
+    if not args.no_orphans and not args.session:
+        db_sessions = set(
+            r[0] for r in conn.execute("SELECT session_id FROM sessions").fetchall()
+        )
+        orphan_ids = [sid for sid in transcript_index if sid not in db_sessions]
+        if orphan_ids:
+            print(f"Ingesting {len(orphan_ids)} orphan transcripts as sessions...")
+            for sid in orphan_ids:
+                new_id = _ingest_orphan_transcript(conn, transcript_index[sid], sid)
+                if new_id:
+                    orphans_ingested += 1
+            conn.commit()
+            print(f"  Ingested {orphans_ingested} new session rows")
+
+    # Gather target sessions from the sessions table
+    where = ["1=1"]
+    params = []
+    if args.session:
+        where.append("session_id = ?")
+        params.append(args.session)
+    if args.date:
+        where.append("date = ?")
+        params.append(args.date)
+    if args.since:
+        where.append("date >= ?")
+        params.append(args.since)
+    if not args.force:
+        where.append("enriched_at IS NULL")
+
+    sql = f"SELECT id, session_id, date FROM sessions WHERE {' AND '.join(where)} ORDER BY date ASC, id ASC"
+    target_sessions = conn.execute(sql, tuple(params)).fetchall()
+    print(f"Sessions to enrich: {len(target_sessions)}")
+
+    if not target_sessions:
+        return
+
+    total_events = 0
+    sessions_processed = 0
+    sessions_skipped_missing = 0
+
+    for row in target_sessions:
+        session_pk, session_id, session_date = row[0], row[1], row[2]
+        transcript = transcript_index.get(session_id)
+        if transcript is None:
+            sessions_skipped_missing += 1
+            continue
+
+        # Buffer all events for this session, then batch-insert
+        rows_to_insert = []
+        for ev in parse_transcript(transcript, session_id=session_id):
+            metadata_json = json.dumps(ev["metadata"]) if ev["metadata"] is not None else None
+            rows_to_insert.append((
+                ev["date"],
+                ev["category"],
+                ev["source"],
+                ev["title"],
+                ev["detail"],
+                ev["url"],
+                metadata_json,
+                ev["tag"],
+            ))
+
+        events_for_session = 0
+        if rows_to_insert:
+            try:
+                conn.executemany(
+                    """INSERT OR IGNORE INTO activities
+                       (date, category, source, title, detail, url, metadata, tag)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    rows_to_insert,
+                )
+                events_for_session = len(rows_to_insert)
+            except Exception as e:
+                print(f"  error batch-writing session {session_id}: {e}", file=sys.stderr)
+
+        # Mark session as enriched
+        conn.execute(
+            "UPDATE sessions SET enriched_at = datetime('now') WHERE id = ?",
+            (session_pk,),
+        )
+        conn.commit()
+        total_events += events_for_session
+        sessions_processed += 1
+
+        if sessions_processed % 5 == 0:
+            print(f"  processed {sessions_processed}/{len(target_sessions)} sessions, {total_events} events so far", flush=True)
+
+    conn.sync()
+    print(f"\nEnrichment complete:")
+    print(f"  Orphan transcripts ingested: {orphans_ingested}")
+    print(f"  Sessions processed: {sessions_processed}")
+    print(f"  Sessions skipped (transcript file missing): {sessions_skipped_missing}")
+    print(f"  Total events written: {total_events}")
 
 
 def cmd_stats(args):
@@ -569,6 +775,19 @@ def main():
     # backfill
     subparsers.add_parser("backfill", help="Parse existing .md logs into DB")
 
+    # enrich-from-transcripts
+    enrich_p = subparsers.add_parser(
+        "enrich-from-transcripts",
+        help="Parse per-session transcripts and write events to activities"
+    )
+    enrich_p.add_argument("--session", default=None, help="Enrich only the given session_id")
+    enrich_p.add_argument("--date", default=None, help="Enrich only sessions from this date")
+    enrich_p.add_argument("--since", default=None, help="Enrich sessions on or after this date")
+    enrich_p.add_argument("--force", action="store_true",
+                          help="Re-enrich even if already done (default: skip already-enriched sessions)")
+    enrich_p.add_argument("--no-orphans", action="store_true",
+                          help="Skip creating sessions rows for transcripts that have no DB entry yet")
+
     # export-md
     export_p = subparsers.add_parser("export-md", help="Export a day as markdown")
     export_p.add_argument("--date", required=True)
@@ -588,6 +807,7 @@ def main():
         "sync": cmd_sync,
         "stats": cmd_stats,
         "backfill": cmd_backfill,
+        "enrich-from-transcripts": cmd_enrich_from_transcripts,
         "export-md": cmd_export_md,
     }
 

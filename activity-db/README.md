@@ -206,6 +206,27 @@ Without Turso credentials, it operates as a plain local SQLite database — no d
 | `completed` | TEXT | Completion date |
 | `created_at` | TEXT | Timestamp |
 
+### sessions
+
+Tracks Claude Code session transcripts for rich activity enrichment.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER | Auto-incrementing primary key |
+| `session_id` | TEXT | Claude session UUID (matches transcript filename) |
+| `date` | TEXT | Local date of the session (from first prompt) |
+| `project` | TEXT | Project name (last segment of `project_path`) |
+| `project_path` | TEXT | Absolute working directory at session start |
+| `prompt_count` | INTEGER | Total user prompts in the session |
+| `duration_minutes` | INTEGER | Session length (0 if derived from transcript only) |
+| `is_personal` | INTEGER | `1` for personal, `0` for work |
+| `device_id` | TEXT | Optional device identifier for multi-device sync |
+| `first_prompt_at` | TEXT | Timestamp of first prompt |
+| `last_prompt_at` | TEXT | Timestamp of last prompt |
+| `metadata` | TEXT | JSON blob for extra data (optional) |
+| `enriched_at` | TEXT | Timestamp when `enrich-from-transcripts` processed this session |
+| `created_at` | TEXT | Timestamp of insertion |
+
 ## CLI Reference
 
 ```bash
@@ -242,6 +263,14 @@ uv run python main.py query-summaries --date 2026-04-04 --type review
 
 # Backfill from existing markdown daily logs
 uv run python main.py backfill
+
+# Enrich activities from Claude Code session transcripts
+#   Parses ~/.claude/projects/<hash>/<session-id>.jsonl and emits structured rows
+#   (categories: tool_use, file_edit, command, mcp_call, plan, paste).
+#   Tracks processed sessions via sessions.enriched_at to avoid double-processing.
+uv run python main.py enrich-from-transcripts --date 2026-04-17   # just today
+uv run python main.py enrich-from-transcripts --since 2026-04-01  # since a date
+uv run python main.py enrich-from-transcripts --force             # re-enrich everything
 
 # Export a day as markdown
 uv run python main.py export-md --date 2026-04-04
