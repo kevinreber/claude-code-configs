@@ -1,0 +1,8 @@
+[project]
+name = "activity-db"
+version = "0.1.0"
+description = "CLI for managing daily activity logs in SQLite with Turso sync"
+requires-python = ">=3.13"
+dependencies = [
+    "libsql-experimental>=0.0.55",
+]

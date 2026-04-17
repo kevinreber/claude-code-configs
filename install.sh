@@ -37,6 +37,7 @@ Options:
     --guardrails    Install guardrails
     --templates     Install CLAUDE.md templates
     --mcp           Install MCP server configurations
+    --activity-db   Install activity-db CLI (required for v2 daily skills)
     --symlink       Use symlinks instead of copying (for development)
     --dry-run       Show what would be installed without installing
     --uninstall     Remove installed configurations
@@ -146,6 +147,47 @@ install_mcp() {
     print_success "MCP configurations installed"
 }
 
+# Install activity-db CLI
+install_activity_db() {
+    print_info "Installing activity-db CLI..."
+    local dest="$CLAUDE_DIR/bin/activity-db"
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo "Would copy: activity-db/main.py -> $dest/main.py"
+        echo "Would copy: activity-db/pyproject.toml -> $dest/pyproject.toml"
+        return
+    fi
+
+    ensure_dir "$dest"
+
+    if [[ "$USE_SYMLINK" == "true" ]]; then
+        ln -sf "$SCRIPT_DIR/activity-db/main.py" "$dest/main.py"
+        ln -sf "$SCRIPT_DIR/activity-db/pyproject.toml" "$dest/pyproject.toml"
+        print_info "Symlinked: main.py, pyproject.toml"
+    else
+        cp "$SCRIPT_DIR/activity-db/main.py" "$dest/main.py"
+        cp "$SCRIPT_DIR/activity-db/pyproject.toml" "$dest/pyproject.toml"
+        print_info "Copied: main.py, pyproject.toml"
+    fi
+
+    # Install Python dependencies if uv is available
+    if command -v uv &> /dev/null; then
+        print_info "Installing Python dependencies with uv..."
+        (cd "$dest" && uv sync 2>/dev/null) && print_success "Python dependencies installed" || print_warning "Failed to install Python dependencies. Run 'cd $dest && uv sync' manually."
+    else
+        print_warning "uv not found. Install it (brew install uv) then run: cd $dest && uv sync"
+    fi
+
+    # Initialize the database
+    if command -v uv &> /dev/null && [[ -f "$dest/.venv/bin/python" || -f "$dest/.venv/bin/python3" ]]; then
+        print_info "Initializing database..."
+        (cd "$dest" && uv run python main.py init 2>/dev/null) && print_success "Database initialized at ~/.claude/activity.db" || print_warning "Database init failed. Run 'cd $dest && uv run python main.py init' manually."
+    fi
+
+    print_success "activity-db CLI installed"
+    print_info "For Turso sync setup, see: activity-db/README.md"
+}
+
 # Uninstall
 uninstall() {
     print_warning "This will remove Claude configurations from $CLAUDE_DIR"
@@ -175,6 +217,7 @@ INSTALL_HOOKS="false"
 INSTALL_GUARDRAILS="false"
 INSTALL_TEMPLATES="false"
 INSTALL_MCP="false"
+INSTALL_ACTIVITY_DB="false"
 DO_UNINSTALL="false"
 
 if [[ $# -eq 0 ]]; then
@@ -209,6 +252,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --mcp)
             INSTALL_MCP="true"
+            shift
+            ;;
+        --activity-db)
+            INSTALL_ACTIVITY_DB="true"
             shift
             ;;
         --symlink)
@@ -258,6 +305,7 @@ if [[ "$INSTALL_ALL" == "true" ]]; then
     install_guardrails
     install_templates
     install_mcp
+    install_activity_db
 else
     [[ "$INSTALL_COMMANDS" == "true" ]] && install_commands
     [[ "$INSTALL_SKILLS" == "true" ]] && install_skills
@@ -265,6 +313,7 @@ else
     [[ "$INSTALL_GUARDRAILS" == "true" ]] && install_guardrails
     [[ "$INSTALL_TEMPLATES" == "true" ]] && install_templates
     [[ "$INSTALL_MCP" == "true" ]] && install_mcp
+    [[ "$INSTALL_ACTIVITY_DB" == "true" ]] && install_activity_db
 fi
 
 echo ""

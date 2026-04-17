@@ -45,6 +45,10 @@ claude-code-configs/
 │   ├── scope-limits.md
 │   ├── confirmation-required.md
 │   └── ...
+├── activity-db/            # SQLite/Turso activity storage CLI
+│   ├── README.md           # Setup guide (Turso, tokens, multi-device)
+│   ├── main.py             # CLI source
+│   └── pyproject.toml      # Python dependencies
 ├── mcp-servers/            # MCP server JSON configs
 │   ├── github.json
 │   ├── filesystem.json
@@ -65,6 +69,7 @@ claude-code-configs/
 ./install.sh --skills       # Skills only
 ./install.sh --hooks        # Hooks only
 ./install.sh --guardrails   # Guardrails only
+./install.sh --activity-db  # activity-db CLI (for v2 daily skills)
 
 # Install with symlinks (for active development)
 ./install.sh --symlink
@@ -73,6 +78,7 @@ claude-code-configs/
 Files are copied to `~/.claude/`:
 - `commands/` → `~/.claude/commands/`
 - `skills/` → `~/.claude/skills/`
+- `activity-db/` → `~/.claude/bin/activity-db/`
 
 ## Working with This Repo
 
