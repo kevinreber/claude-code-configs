@@ -243,27 +243,6 @@ Check for:
 
 ---
 
-## Phase 1: Run Build & Tests (if applicable)
-
-If a build or test command is available, run it mechanically:
-
-1. **Detect test runner:**
-   - Check for `Makefile`, `package.json`, `pom.xml`, `go.mod`, `Cargo.toml`, `pytest.ini`, etc.
-   - Prefer: `make test`, `npm test`, `go test ./...`, `cargo test`, `pytest`, `./gradlew test`
-
-2. **Run tests:**
-   ```bash
-   <detected test command>
-   ```
-   Report: pass count, failure count, any failures with full output.
-
-3. **If tests fail:**
-   - Identify which tests failed and why
-   - Determine if the failure is from the new changes or pre-existing
-   - Report clearly
-
----
-
 ## Pass 7: Synthesis & Cross-Reference
 
 **Lens: "What does the full picture tell us that no single pass could?"**
@@ -296,7 +275,28 @@ This pass operates **only on the findings from Passes 1-6**. Do not re-examine t
 
 ---
 
-## Phase 2: Validation Verdict
+## Phase 2: Run Build & Tests (if applicable)
+
+If a build or test command is available, run it mechanically:
+
+1. **Detect test runner:**
+   - Check for `Makefile`, `package.json`, `pom.xml`, `go.mod`, `Cargo.toml`, `pytest.ini`, etc.
+   - Prefer: `make test`, `npm test`, `go test ./...`, `cargo test`, `pytest`, `./gradlew test`
+
+2. **Run tests:**
+   ```bash
+   <detected test command>
+   ```
+   Report: pass count, failure count, any failures with full output.
+
+3. **If tests fail:**
+   - Identify which tests failed and why
+   - Determine if the failure is from the new changes or pre-existing
+   - Report clearly
+
+---
+
+## Phase 3: Validation Verdict
 
 After all passes and tests, produce a final verdict:
 
@@ -342,11 +342,11 @@ After all passes and tests, produce a final verdict:
 
 ### Verdict: <one of below>
 
-HIGH CONFIDENCE — All passes clean. Changes are correct and safe to ship.
+✅ HIGH CONFIDENCE — All passes clean. Changes are correct and safe to ship.
 
-NEEDS ATTENTION — Issues found that should be resolved before shipping.
+⚠️  NEEDS ATTENTION — Issues found that should be resolved before shipping.
 
-DO NOT SHIP — Critical issues found that are likely to cause failures in production.
+❌ DO NOT SHIP — Critical issues found that are likely to cause failures in production.
 ```
 
 ---

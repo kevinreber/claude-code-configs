@@ -43,6 +43,7 @@ Run all relevant dimensions for the scope. Skip dimensions that clearly don't ap
 - Are errors propagated to callers or lost?
 
 ### 2. Test Coverage Gaps
+*(extends `/validate` Pass 5 — applied to existing code, not just recent changes)*
 - What behaviors have no test?
 - What error paths are untested?
 - What edge cases are unexercised?
@@ -51,6 +52,7 @@ Run all relevant dimensions for the scope. Skip dimensions that clearly don't ap
 - What would break silently if tests passed but production differed?
 
 ### 3. Observability Gaps
+*(extends `/validate` Pass 4 — applied to existing code)*
 - What operations have no logging?
 - What failure modes would be invisible in production?
 - Are there code paths that could degrade silently for hours before being noticed?
@@ -77,6 +79,7 @@ Run all relevant dimensions for the scope. Skip dimensions that clearly don't ap
 - Is there behavior that only makes sense with tribal knowledge?
 
 ### 7. Architectural Gaps *(macro/meso scope)*
+*(use `/brain` design mode thinking for this dimension)*
 - Are there missing abstractions that should exist? (repeated patterns without a home)
 - Are there abstractions that exist but aren't used consistently?
 - Are concerns separated appropriately, or is business logic mixed with infrastructure?
@@ -91,6 +94,7 @@ Run all relevant dimensions for the scope. Skip dimensions that clearly don't ap
 - Are there missing pagination, filtering, or sorting capabilities?
 
 ### 9. Operational Readiness Gaps *(meso/macro scope)*
+*(extends `/validate` Pass 6 — applied to existing code)*
 - Is there a graceful shutdown path?
 - Is there a health check endpoint?
 - Are there configuration gaps (hardcoded values that should be config)?
@@ -105,6 +109,8 @@ For each dimension, don't just scan — **reason about what should exist**:
 1. What is this code *trying* to do?
 2. What would a thorough implementation of that look like?
 3. What's the delta between what's there and what that looks like?
+
+Use `/brain` design mode thinking for architectural dimensions — think about what a well-designed version of this area would look like, then identify what's missing.
 
 ---
 

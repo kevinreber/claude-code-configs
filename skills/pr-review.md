@@ -43,7 +43,37 @@ Perform a deep, expert-level code review. Specialize in the languages and framew
 
 ---
 
-## Phase 2: Analysis
+## Phase 2: Description Quality Check (Feature PRs)
+
+**Before reviewing code**, determine if this is a feature PR:
+- Has `feat:` commits, adds new user-facing functionality, new API surface, or new subsystems
+- Or changes 200+ lines across multiple files introducing new behavior
+
+If it **is** a feature PR, check the PR description for these required sections:
+
+| Section | What to look for |
+|---------|-----------------|
+| **Feature Diagram** | Architecture, data flow, or component diagram (ASCII or Mermaid) |
+| **Design Trade-offs** | Table or list of key decisions with alternatives and reasoning |
+| **How to Test** | Concrete example inputs/steps with expected outputs anyone can run |
+| **Known Limitations** | Explicit callouts of what's out of scope or has known gaps |
+
+For any missing section, include a top-level comment (not inline) at the end of your summary:
+
+```
+### Description Gaps
+The following sections are missing from the PR description and would help reviewers:
+- [ ] **Feature Diagram** — add an architecture or data flow diagram
+- [ ] **Design Trade-offs** — document key decisions and why alternatives were rejected
+- [ ] **How to Test** — add concrete example inputs with expected outputs
+- [ ] **Known Limitations** — note what's out of scope or has known issues
+```
+
+Skip this check entirely for non-feature PRs (bug fixes, chores, docs, refactors).
+
+---
+
+## Phase 3: Code Analysis
 
 Read every changed file carefully. For each change, evaluate:
 
@@ -87,7 +117,7 @@ Read every changed file carefully. For each change, evaluate:
 
 ---
 
-## Phase 3: Build Comment List
+## Phase 4: Build Comment List
 
 Compile all findings into a structured list before posting. Each finding needs:
 - `file`: the file path
@@ -114,7 +144,7 @@ For PRAISE:
 
 ---
 
-## Phase 4: Post Inline Comments
+## Phase 5: Post Inline Comments
 
 For each finding, post an inline review comment using the GitHub API:
 
@@ -142,7 +172,7 @@ gh api repos/:owner/:repo/pulls/<number>/comments \
 
 ---
 
-## Phase 5: Summary Comment
+## Phase 6: Summary Comment
 
 After all inline comments are posted, post one final top-level PR comment:
 

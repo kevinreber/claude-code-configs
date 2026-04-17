@@ -52,9 +52,12 @@ total_input=$(echo "$input" | jq -r '.context_window.total_input_tokens // 0')
 total_output=$(echo "$input" | jq -r '.context_window.total_output_tokens // 0')
 context_size=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
 used_percentage=$(echo "$input" | jq -r '.context_window.used_percentage // 0')
+cache_creation=$(echo "$input" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0')
+cache_read=$(echo "$input" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0')
+current_input=$(echo "$input" | jq -r '.context_window.current_usage.input_tokens // 0')
 
-# Calculate total tokens used
-total_tokens=$((total_input + total_output))
+# Calculate total tokens used (match used_percentage: input + cache, no output)
+total_tokens=$((current_input + cache_creation + cache_read))
 
 # Format tokens in k format
 if [ $total_tokens -ge 1000 ]; then
