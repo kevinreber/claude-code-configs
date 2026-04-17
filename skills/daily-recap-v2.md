@@ -27,13 +27,16 @@ All database operations go through the CLI at `~/.claude/bin/activity-db/`. Alwa
 # Write an activity
 uv run python main.py write --date YYYY-MM-DD --category <category> --source <source> --title "..." [--detail "..."] [--url "..."] [--metadata '{}'] [--tag work|personal]
 
-# Write a summary
+# Write a summary (versioned — re-runs append a new version instead of overwriting)
 uv run python main.py summary --date YYYY-MM-DD --period daily --type recap --content "..."
 
 # Query activities
 uv run python main.py query --date YYYY-MM-DD
 uv run python main.py query --start YYYY-MM-DD --end YYYY-MM-DD --source jira
 uv run python main.py query --sql "SELECT * FROM activities WHERE source = 'github' AND date = '2026-04-03'"
+
+# Query summaries (defaults to latest version; use --all-versions for history, --version N for a specific one)
+uv run python main.py query-summaries --date YYYY-MM-DD --type recap
 
 # Stats
 uv run python main.py stats

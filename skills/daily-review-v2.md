@@ -27,7 +27,7 @@ All database operations go through the CLI at `~/.claude/bin/activity-db/`. Alwa
 # Write an activity
 uv run python main.py write --date YYYY-MM-DD --category <category> --source <source> --title "..." [--detail "..."] [--url "..."] [--metadata '{}'] [--tag work|personal]
 
-# Write a summary
+# Write a summary (versioned — re-runs never overwrite, they append a new version)
 uv run python main.py summary --date YYYY-MM-DD --period daily|weekly|monthly|project --type review|recap|standup|brag --content "..."
 
 # Query activities
@@ -37,8 +37,10 @@ uv run python main.py query --category <category> --source <source>
 uv run python main.py query --sql "SELECT ..."
 uv run python main.py query --format table
 
-# Query summaries
+# Query summaries (defaults to latest version per (date, period, type))
 uv run python main.py query-summaries --date YYYY-MM-DD --type review
+uv run python main.py query-summaries --date YYYY-MM-DD --type review --all-versions   # see history
+uv run python main.py query-summaries --date YYYY-MM-DD --type review --version 2      # pin a specific version
 
 # Stats
 uv run python main.py stats
@@ -384,3 +386,4 @@ Regenerate `~/.claude/daily-logs/BRAG-DOC.md` from structured data.
 - **Python for data parsing** — use Python via Bash tool for history.jsonl parsing
 - **Dates:** Determine today's date from the system. Use the user's local timezone.
 - **Run activity-db from its directory:** Always `cd ~/.claude/bin/activity-db && uv run python main.py <command>`
+- **Summaries are versioned, not overwritten** — re-running `summary` for the same `(date, period, type)` appends a new version (v2, v3, …) instead of replacing the prior one. The `query-summaries` command defaults to the latest version; pass `--all-versions` to see history or `--version N` to pin one. Prior versions are preserved so regenerations never destroy earlier content.

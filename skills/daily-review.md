@@ -427,16 +427,22 @@ Generate a time-of-day activity visualization. Output to screen.
 
 Hour  | Mon | Tue | Wed | Thu | Fri | Sat | Sun
 ------|-----|-----|-----|-----|-----|-----|-----
-00-01 |  .  |  .  |  .  |  .  |  .  |  .  |  .
-01-02 |  .  |  .  |  .  |  .  |  .  |  .  |  .
+00-01 |  ·  |  ·  |  ·  |  ·  |  ·  |  ·  |  ·
+01-02 |  ·  |  ·  |  ·  |  ·  |  ·  |  ·  |  ·
 ...
-09-10 | ### | ##. | ### | ##. | #.. |  .  |  .
-10-11 | ### | ### | ### | ### | ##. |  .  |  .
+09-10 | ███ | ██· | ███ | ██· | █·· |  ·  |  ·
+10-11 | ███ | ███ | ███ | ███ | ██· |  ·  |  ·
 ...
-23-00 | ##. |  .  | #.. | ##. |  .  |  .  | #.
+23-00 | ██· |  ·  | █·· | ██· |  ·  |  ·  | █·
 
-Legend: . = 0  # = 1-5  ## = 6-15  ### = 16+
+Legend: · = 0  █ = 1-5  ██ = 6-15  ███ = 16+
 ```
+
+Use block characters to represent density:
+- ` · ` = 0 prompts
+- ` █ ` = 1-5 prompts
+- `██ ` = 6-15 prompts
+- `███` = 16+ prompts
 
 ### Insights
 Below the heatmap, add:
@@ -570,6 +576,14 @@ When `--sync-all` is used:
 
 - Google Docs should be created as **private by default** — only the creator has access
 - No sharing or link-sharing is enabled unless the user does it manually
+
+### First-time sync for a user
+
+If the skill runs and no doc is configured yet:
+1. Check `~/.claude/daily-logs/gdoc-config.json` — if missing or no `daily_review` key
+2. Create a new private Google Doc: `[their name] - Daily Review Log`
+3. Save the doc ID to their local config
+4. Continue with the sync
 
 ---
 
