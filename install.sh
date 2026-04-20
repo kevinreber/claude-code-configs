@@ -107,10 +107,37 @@ install_commands() {
     print_success "Slash commands installed"
 }
 
-# Install skills
+# Install skills (directory-based: skills/<name>/SKILL.md)
 install_skills() {
     print_info "Installing skills..."
-    install_files "$SCRIPT_DIR/skills" "$CLAUDE_DIR/skills" "$USE_SYMLINK" "$DRY_RUN"
+    local src="$SCRIPT_DIR/skills"
+    local dest="$CLAUDE_DIR/skills"
+
+    ensure_dir "$dest"
+
+    for skill_dir in "$src"/*/; do
+        [[ ! -d "$skill_dir" ]] && continue
+        local name=$(basename "$skill_dir")
+        local dest_dir="$dest/$name"
+
+        if [[ "$DRY_RUN" == "true" ]]; then
+            if [[ "$USE_SYMLINK" == "true" ]]; then
+                echo "Would symlink: $skill_dir -> $dest_dir"
+            else
+                echo "Would copy: $skill_dir -> $dest_dir"
+            fi
+        else
+            # Remove existing (symlink or directory) before installing
+            rm -rf "$dest_dir"
+            if [[ "$USE_SYMLINK" == "true" ]]; then
+                ln -sf "$skill_dir" "$dest_dir"
+                print_info "Symlinked: $name"
+            else
+                cp -r "$skill_dir" "$dest_dir"
+                print_info "Copied: $name"
+            fi
+        fi
+    done
     print_success "Skills installed"
 }
 
