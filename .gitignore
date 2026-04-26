@@ -23,3 +23,6 @@ node_modules/
 # Personal customizations (keep separate from shared configs)
 *.local.md
 *.local.json
+
+# Sync staging (intermediate output of sync/sync.py pass 1)
+.sync-staging/

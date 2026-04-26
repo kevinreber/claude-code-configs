@@ -76,6 +76,7 @@ Check for:
 ### Dependencies
 - Do the changes depend on anything that might not be available in all environments?
 - Are new imports/packages available in production, not just dev?
+- If the behavior of a dependency is unclear, invoke `/discover` to find authoritative documentation before assuming
 
 ### State & Shared Resources
 - Do changes affect global state, shared caches, or databases in ways that could impact other operations?
@@ -243,11 +244,32 @@ Check for:
 
 ---
 
+## Phase 1: Run Build & Tests (if applicable)
+
+If a build or test command is available, run it mechanically:
+
+1. **Detect test runner:**
+   - Check for `Makefile`, `package.json`, `pom.xml`, `go.mod`, `Cargo.toml`, `pytest.ini`, etc.
+   - Prefer: `make test`, `npm test`, `go test ./...`, `cargo test`, `pytest`, `./gradlew test`
+
+2. **Run tests:**
+   ```bash
+   <detected test command>
+   ```
+   Report: pass count, failure count, any failures with full output.
+
+3. **If tests fail:**
+   - Identify which tests failed and why
+   - Determine if the failure is from the new changes or pre-existing
+   - Report clearly
+
+---
+
 ## Pass 7: Synthesis & Cross-Reference
 
 **Lens: "What does the full picture tell us that no single pass could?"**
 
-This pass operates **only on the findings from Passes 1-6**. Do not re-examine the code. Reason about the findings as a set.
+This pass operates **only on the findings from Passes 1–6**. Do not re-examine the code. Reason about the findings as a set.
 
 ### Issue Combination
 - Do any two findings from different passes **combine into something worse**?

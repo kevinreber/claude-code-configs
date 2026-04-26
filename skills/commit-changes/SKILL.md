@@ -54,7 +54,7 @@ Analyze current changes and generate a meaningful commit message following Conve
    - Subject line: max 50 characters, imperative mood (e.g., "add", "fix", "update")
    - Body: wrap at 72 characters, explain what and why (not how)
    - Reference issues when applicable (e.g., "Closes #123", "Fixes #456")
-   - Add `Co-Authored-By: Claude <noreply@anthropic.com>` in footer
+   - Add `Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>` in footer
 
 6. **Present the commit message:**
    ```
@@ -71,7 +71,7 @@ Analyze current changes and generate a meaningful commit message following Conve
 
    Closes #123
 
-   Co-Authored-By: Claude <noreply@anthropic.com>
+   Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
    ```
 
 7. **Ask for approval:**
@@ -101,4 +101,4 @@ Analyze current changes and generate a meaningful commit message following Conve
 - Always add the Co-Authored-By footer
 - Use HEREDOC for multi-line commit messages
 - If changes span multiple concerns, suggest splitting into multiple commits
-- Reference issue numbers when relevant (e.g., Jira tickets, GitHub issues)
+- Reference issue numbers when relevant (e.g., JIRA tickets, GitHub issues)

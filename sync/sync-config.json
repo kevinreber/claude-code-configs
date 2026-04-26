@@ -1,0 +1,186 @@
+{
+  "_comment": "Rules for syncing ~/.claude/ → this repo, sanitized. Edit and re-run sync.py to refine.",
+
+  "source_root": "~/.claude",
+
+  "path_mappings": {
+    "commands": "commands",
+    "skills": "skills",
+    "statusline-command.sh": "statusline/statusline-command.sh",
+    "settings.json": "settings/global-settings.json",
+    "CLAUDE.md": "settings/global-CLAUDE.md",
+    "bin/activity-db": "activity-db",
+    "plugins/known_marketplaces.json": "settings/known_marketplaces.json",
+    "plugins/installed_plugins.json": "settings/installed_plugins.json"
+  },
+
+  "skip_paths": [
+    ".git",
+    ".gitignore",
+    "activity.db",
+    "activity.db-*",
+    "activity.db.bak-*",
+    "history.db",
+    "history.jsonl",
+    "stats-cache.json",
+    "policy-limits.json",
+    "turso.env",
+    "README.md",
+    "backups",
+    "cache",
+    "daily-logs",
+    "debug",
+    "downloads",
+    "file-history",
+    "ide",
+    "paste-cache",
+    "projects",
+    "seek",
+    "session-env",
+    "sessions",
+    "shell-snapshots",
+    "statsig",
+    "tasks",
+    "telemetry",
+    "todos",
+    "rules/captain.md",
+    "skills/captain-refresh",
+    "skills/mint-build",
+    "skills/mint-build-cfg",
+    "plugins/cache",
+    "plugins/data",
+    "plugins/marketplaces",
+    "plugins/blocklist.json",
+    "plugins/install-counts-cache.json"
+  ],
+
+  "skip_globs": [
+    "**/*.env",
+    "**/*token*",
+    "**/*secret*",
+    "**/*.bak-*",
+    "**/__pycache__",
+    "**/.DS_Store",
+    "**/.venv",
+    "**/.venv/**"
+  ],
+
+  "_redaction_comment": "Files matching these globs get text redaction applied. Other files copied verbatim.",
+  "redact_globs": [
+    "**/*.md",
+    "**/*.json",
+    "**/*.sh",
+    "**/*.py",
+    "**/*.yaml",
+    "**/*.yml"
+  ],
+
+  "redaction_rules": [
+    {
+      "_comment": "Replace home dir with ~",
+      "pattern": "/Users/kreber/",
+      "replacement": "~/",
+      "regex": false
+    },
+    {
+      "_comment": "Replace work email",
+      "pattern": "kreber@linkedin\\.com",
+      "replacement": "<your-email>",
+      "regex": true
+    },
+    {
+      "_comment": "Replace user's full name in prose/examples",
+      "pattern": "Kevin Reber",
+      "replacement": "<your-name>",
+      "regex": false
+    },
+    {
+      "_comment": "Replace LDAP/username — case-sensitive, word-boundary regex to avoid mid-word matches",
+      "pattern": "\\bkreber\\b",
+      "replacement": "<your-username>",
+      "regex": true
+    }
+  ],
+
+  "_drop_lines_comment": "Lines matching ANY of these regexes are removed entirely. Aggressive — drops whole lines, can leave malformed example blocks. Tune if too greedy.",
+  "drop_line_patterns": [
+    "mcp__captain__",
+    "captain-refresh",
+    "linkedin-cli-tools",
+    "linkedin-framework",
+    "linkedin-dev-workflow",
+    "linkedin-plugin-creator",
+    "linkedin-plugins",
+    "li-plugin-tool",
+    "mae-core",
+    "nimbus-agent",
+    "observe-agent",
+    "library-specs",
+    "@linkedin-plugins",
+    "linkedin\\.com",
+    "linkedin\\.atlassian\\.net",
+    "LinkedIn",
+    "lieventscorp00",
+    "confetti",
+    "neo-workflow",
+    "kreber@linkedin\\.com"
+  ],
+
+  "_strip_block_comment": "Multi-line blocks delimited by these markers are removed. Markers are stripped, content inside dropped.",
+  "strip_blocks": [
+    {
+      "start": "<!-- CLAUDE_ONLY_START -->",
+      "end": "<!-- CLAUDE_ONLY_END -->"
+    },
+    {
+      "start": "<!-- AP_REDIRECT:START -->",
+      "end": "<!-- AP_REDIRECT:END -->"
+    }
+  ],
+
+  "_settings_comment": "Special handling for settings.json — plugin allowlist, permission denylist, hook denylist.",
+  "settings_json": {
+    "enabled_plugins_allowlist": [
+      "gopls-lsp@claude-plugins-official",
+      "skill-creator@claude-plugins-official",
+      "code-review@claude-plugins-official"
+    ],
+    "drop_permission_patterns": [
+      "daily-logs",
+      "BRAG-DOC",
+      "/Users/kreber/"
+    ],
+    "_hook_drop_comment": "Hooks whose 'command' field matches any of these regexes are dropped. Catches hooks that invoke internal CLIs or paths.",
+    "hook_command_drop_patterns": [
+      "linkedin",
+      "captain",
+      "mint(?:\\s|$)",
+      "curli",
+      "grpcurli",
+      "lix-cli",
+      "kafka-tool",
+      "acl-tool",
+      "kubectl-in",
+      "/Users/kreber/"
+    ]
+  },
+
+  "_marketplaces_comment": "Only these plugin marketplaces are kept in known_marketplaces.json.",
+  "known_marketplaces_allowlist": [
+    "claude-plugins-official"
+  ],
+
+  "_skill_normalization_comment": "Loose ~/.claude/skills/<name>.md files get normalized to skills/<name>/SKILL.md in the repo.",
+  "normalize_loose_skills": true,
+
+  "_review_flag_comment": "Files matching these globs are flagged for manual review in the diff report (don't trust full automation).",
+  "manual_review_globs": [
+    "skills/discover/**",
+    "skills/daily-recap/**",
+    "skills/daily-recap-v2/**",
+    "skills/daily-review/**",
+    "skills/daily-review-v2/**",
+    "skills/find-skills/**",
+    "skills/update-docs-wiki/**"
+  ]
+}

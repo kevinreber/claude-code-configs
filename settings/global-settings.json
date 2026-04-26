@@ -1,0 +1,69 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(gh:*)",
+      "Bash(uv:*)",
+      "Bash(git config:*)",
+      "Edit(**/*.test.*)",
+      "Edit(**/*.spec.*)",
+      "Edit(**/test_*.*)",
+      "Edit(**/*_test.*)",
+      "Edit(**/__tests__/**)",
+      "Edit(**/test/**)",
+      "Edit(**/tests/**)",
+      "Edit(**/spec/**)",
+      "Write(**/*.test.*)",
+      "Write(**/*.spec.*)",
+      "Write(**/test_*.*)",
+      "Write(**/*_test.*)",
+      "Write(**/__tests__/**)",
+      "Write(**/test/**)",
+      "Write(**/tests/**)",
+      "Write(**/spec/**)"
+    ]
+  },
+  "model": "opus[1m]",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Claude has finished\" with title \"Claude Code\" sound name \"Purr\"' 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Claude is waiting for permission\" with title \"Claude Code\" sound name \"Funk\"' 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Claude needs your attention\" with title \"Claude Code\" sound name \"Funk\"' 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "gopls-lsp@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true
+  },
+  "skipDangerousModePermissionPrompt": true
+}

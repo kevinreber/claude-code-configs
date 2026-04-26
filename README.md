@@ -137,19 +137,58 @@ Add your own configurations:
 2. Follow the naming convention: `kebab-case.md`
 3. Include a header comment explaining the purpose
 
-## Syncing Across Devices
+## Multi-device workflow
 
-### Using Git
-```bash
-# On new device
-git clone <this-repo> ~/claude-configs
-cd ~/claude-configs && ./install.sh --all
+This repo is designed to be the **shared, sanitized superset** of Claude Code configs across multiple devices (e.g., a work laptop and a personal laptop). Two scripts handle the bidirectional flow:
+
+```
+       ┌────────────────────────┐
+       │  ~/.claude/  (device)  │
+       └──────┬──────────▲──────┘
+              │          │
+   /sync-from-global   ./install.sh
+   (sanitize → repo)   (repo → ~/.claude/)
+              │          │
+              ▼          │
+       ┌────────────────────────┐
+       │   claude-code-configs  │
+       │   (shared via git)     │
+       └────────────────────────┘
 ```
 
-### Using Symlinks (recommended for active development)
+### Sync direction 1: device → repo (`/sync-from-global`)
+
+Pulls your global `~/.claude/` configs into the repo, stripping work-specific content (LinkedIn plugins, Captain MCP, work email, internal URLs). Two-pass with diff review — see [`skills/sync-from-global/SKILL.md`](skills/sync-from-global/SKILL.md).
+
+**Important: this is additive, never destructive.**
+- Pass 2 only **copies** staged files into the repo. It does not delete.
+- Files that exist in the repo but not in this device's `~/.claude/` are listed under "Repo-only" in the pass 1 summary and are **left untouched** on apply.
+- This means each device contributes its slice of generic skills to the union; nothing gets removed when another device syncs.
+
+### Sync direction 2: repo → device (`install.sh`)
+
+Pushes the repo's configs into a device's `~/.claude/`:
+
 ```bash
-./install.sh --symlink
+# On a new device
+git clone <this-repo> ~/claude-code-configs
+cd ~/claude-code-configs && ./install.sh --all
+
+# Or use symlinks so `git pull` instantly updates ~/.claude/ — recommended
+./install.sh --symlink --all
 ```
+
+### Recommended workflow for keeping devices in sync
+
+1. **Pick a primary "writer" device** — the one where new configs evolve fastest. For most people this is the work laptop.
+2. **On the writer device**: when you've added/refined skills globally, run `/sync-from-global` → review the diff → commit → push.
+3. **On reader devices**: install with `./install.sh --symlink --all`. After that, `git pull` is enough — your `~/.claude/` updates instantly via symlinks.
+4. **For per-device customizations**: use `*.local.md` and `*.local.json` filenames — these are gitignored, so they stay on the device that needs them.
+5. **Conflict prevention**: avoid editing `~/.claude/<file>` directly on a "reader" device. Edit the repo file instead, push, then pull on the writer.
+
+### What about putting `~/.claude/` itself under git (Obsidian-vault style)?
+
+**Not recommended.** Unlike an Obsidian vault (mostly stable text content), `~/.claude/` is a runtime data directory: `activity.db`, `history.jsonl`, `sessions/`, `paste-cache/`, `statsig/`, `projects/` all change constantly and would create endless merge conflicts. Plus, work-device `~/.claude/` contains internal plugins and settings that shouldn't go to a personal/public remote. The two-script flow above keeps the sanitized, sharable parts in git and the runtime/work-specific parts on each device where they belong.
 
 ## License
 

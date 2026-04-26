@@ -37,6 +37,7 @@ Options:
     --guardrails    Install guardrails
     --templates     Install CLAUDE.md templates
     --mcp           Install MCP server configurations
+    --settings      Install global settings.json + plugin marketplace configs
     --activity-db   Install activity-db CLI (required for v2 daily skills)
     --symlink       Use symlinks instead of copying (for development)
     --dry-run       Show what would be installed without installing
@@ -174,6 +175,59 @@ install_mcp() {
     print_success "MCP configurations installed"
 }
 
+# Install settings (global settings.json + plugin marketplace configs)
+install_settings() {
+    print_info "Installing global settings..."
+    local src="$SCRIPT_DIR/settings"
+
+    if [[ ! -d "$src" ]]; then
+        print_warning "settings/ directory not found in repo. Skipping."
+        return
+    fi
+
+    # Map: source file → destination path
+    local -a mappings=(
+        "global-settings.json:$CLAUDE_DIR/settings.json"
+        "global-CLAUDE.md:$CLAUDE_DIR/CLAUDE.md"
+        "known_marketplaces.json:$CLAUDE_DIR/plugins/known_marketplaces.json"
+        "installed_plugins.json:$CLAUDE_DIR/plugins/installed_plugins.json"
+    )
+
+    for mapping in "${mappings[@]}"; do
+        local filename="${mapping%%:*}"
+        local dest="${mapping##*:}"
+        local file="$src/$filename"
+
+        [[ ! -f "$file" ]] && { print_warning "Missing $filename in settings/, skipping."; continue; }
+
+        ensure_dir "$(dirname "$dest")"
+
+        if [[ "$DRY_RUN" == "true" ]]; then
+            echo "Would install: $file -> $dest"
+            continue
+        fi
+
+        # Backup existing if present and content differs
+        if [[ -f "$dest" ]] && ! cmp -s "$file" "$dest"; then
+            local backup="${dest}.bak.$(date +%Y%m%d-%H%M%S)"
+            cp "$dest" "$backup"
+            print_warning "Backed up existing $dest -> $backup"
+            print_warning "  Review your backup if you had local customizations (e.g., extra plugins enabled, custom permissions)"
+        fi
+
+        if [[ "$USE_SYMLINK" == "true" ]]; then
+            ln -sf "$file" "$dest"
+            print_info "Symlinked: $filename -> $dest"
+        else
+            cp "$file" "$dest"
+            print_info "Copied: $filename -> $dest"
+        fi
+    done
+
+    print_success "Settings installed"
+    print_info "Note: settings.json is device-specific. If you had local plugins enabled, restore them from the .bak file."
+}
+
 # Install activity-db CLI
 install_activity_db() {
     print_info "Installing activity-db CLI..."
@@ -247,6 +301,7 @@ INSTALL_HOOKS="false"
 INSTALL_GUARDRAILS="false"
 INSTALL_TEMPLATES="false"
 INSTALL_MCP="false"
+INSTALL_SETTINGS="false"
 INSTALL_ACTIVITY_DB="false"
 DO_UNINSTALL="false"
 
@@ -282,6 +337,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --mcp)
             INSTALL_MCP="true"
+            shift
+            ;;
+        --settings)
+            INSTALL_SETTINGS="true"
             shift
             ;;
         --activity-db)
@@ -328,6 +387,15 @@ echo ""
 print_info "Installing to: $CLAUDE_DIR"
 echo ""
 
+# Always create a symlink to the source repo so skills/scripts can find it
+# regardless of where it was cloned. Used by /sync-from-global.
+if [[ "$DRY_RUN" != "true" ]]; then
+    ensure_dir "$CLAUDE_DIR"
+    ln -sfn "$SCRIPT_DIR" "$CLAUDE_DIR/configs-repo"
+    print_info "Linked: $CLAUDE_DIR/configs-repo -> $SCRIPT_DIR"
+fi
+echo ""
+
 if [[ "$INSTALL_ALL" == "true" ]]; then
     install_commands
     install_skills
@@ -335,6 +403,7 @@ if [[ "$INSTALL_ALL" == "true" ]]; then
     install_guardrails
     install_templates
     install_mcp
+    install_settings
     install_activity_db
 else
     [[ "$INSTALL_COMMANDS" == "true" ]] && install_commands
@@ -343,6 +412,7 @@ else
     [[ "$INSTALL_GUARDRAILS" == "true" ]] && install_guardrails
     [[ "$INSTALL_TEMPLATES" == "true" ]] && install_templates
     [[ "$INSTALL_MCP" == "true" ]] && install_mcp
+    [[ "$INSTALL_SETTINGS" == "true" ]] && install_settings
     [[ "$INSTALL_ACTIVITY_DB" == "true" ]] && install_activity_db
 fi
 

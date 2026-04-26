@@ -50,11 +50,11 @@ if [ -n "$session_id" ] && [ -n "$project_dir" ]; then
 fi
 total_input=$(echo "$input" | jq -r '.context_window.total_input_tokens // 0')
 total_output=$(echo "$input" | jq -r '.context_window.total_output_tokens // 0')
-context_size=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
-used_percentage=$(echo "$input" | jq -r '.context_window.used_percentage // 0')
 cache_creation=$(echo "$input" | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0')
 cache_read=$(echo "$input" | jq -r '.context_window.current_usage.cache_read_input_tokens // 0')
 current_input=$(echo "$input" | jq -r '.context_window.current_usage.input_tokens // 0')
+context_size=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
+used_percentage=$(echo "$input" | jq -r '.context_window.used_percentage // 0')
 
 # Calculate total tokens used (match used_percentage: input + cache, no output)
 total_tokens=$((current_input + cache_creation + cache_read))
@@ -75,30 +75,10 @@ fi
 # Round percentage to integer
 used_percentage_int=$(printf "%.0f" "$used_percentage")
 
-# Calculate cost based on model pricing
-# Prices are per million tokens
-case "$model_id" in
-    claude-sonnet-4-5-20250929)
-        # Claude Sonnet 4.5: $3 per MTok input, $15 per MTok output
-        input_cost_per_mtok=3.0
-        output_cost_per_mtok=15.0
-        ;;
-    claude-opus-4-5-20251101)
-        # Claude Opus 4.5: $15 per MTok input, $75 per MTok output
-        input_cost_per_mtok=15.0
-        output_cost_per_mtok=75.0
-        ;;
-    *)
-        # Default to Sonnet 4.5 pricing
-        input_cost_per_mtok=3.0
-        output_cost_per_mtok=15.0
-        ;;
-esac
-
-# Calculate cost in dollars
-input_cost=$(echo "scale=4; $total_input * $input_cost_per_mtok / 1000000" | bc)
-output_cost=$(echo "scale=4; $total_output * $output_cost_per_mtok / 1000000" | bc)
-total_cost=$(echo "scale=4; $input_cost + $output_cost" | bc)
+# Read cost directly from Claude Code's session tracking (.cost.total_cost_usd).
+# This matches /cost output exactly — it accounts for cache read/write pricing
+# across all models, so no manual per-model rate tables needed.
+total_cost=$(echo "$input" | jq -r '.cost.total_cost_usd // 0')
 
 # Format cost display
 if (( $(echo "$total_cost < 0.01" | bc -l) )); then

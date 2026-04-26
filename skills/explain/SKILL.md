@@ -49,7 +49,7 @@ When the user runs `/explain <target>`, explain the specified code target.
    - Trace data flow and dependencies
    - Consider the broader system context
 
-4. **Provide explanation at multiple depth levels:**
+3. **Provide explanation at multiple depth levels:**
 
    **Overview**: What does this code do at a high level?
 
@@ -61,7 +61,7 @@ When the user runs `/explain <target>`, explain the specified code target.
 
    **Context**: How it fits in the broader system
 
-5. **Cover these aspects:**
+4. **Cover these aspects:**
    - **Purpose**: What problem does this solve?
    - **Inputs/Outputs**: What goes in, what comes out?
    - **Dependencies**: What does it rely on?
@@ -70,7 +70,7 @@ When the user runs `/explain <target>`, explain the specified code target.
    - **Trade-offs**: Why this approach vs alternatives?
    - **Gotchas**: Non-obvious behaviors or edge cases
 
-6. **Format the explanation:**
+5. **Format the explanation:**
 
 ```markdown
 ## [File/Function Name]
@@ -115,7 +115,7 @@ When the user runs `/explain <target>`, explain the specified code target.
 - [Common pitfall #3]
 ```
 
-7. **Adjust depth based on complexity:**
+6. **Adjust depth based on complexity:**
    - Simple utility function: Brief explanation with example
    - Complex algorithm: Detailed step-by-step walkthrough
    - System component: Include architecture context and interactions

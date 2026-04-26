@@ -215,10 +215,6 @@ gh pr comment <number> --body "$(cat <<'EOF'
 
 ### What's Working Well
 <Highlight PRAISE items and any broader positive patterns>
-
----
-
-> 🤖 Review generated with [Claude Code](https://claude.com/claude-code)
 EOF
 )"
 ```

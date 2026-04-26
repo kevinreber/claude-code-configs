@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "plugins": {
+    "gopls-lsp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "~/.claude/plugins/cache/claude-plugins-official/gopls-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-02-13T19:17:25.108Z",
+        "lastUpdated": "2026-02-13T19:17:25.108Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "skill-creator@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "~/.claude/plugins/cache/claude-plugins-official/skill-creator/ae037753b107",
+        "version": "ae037753b107",
+        "installedAt": "2026-03-31T17:50:49.217Z",
+        "lastUpdated": "2026-04-21T21:18:22.881Z",
+        "gitCommitSha": "9d4a7d57a106dcd9b3a83f85caada141e5d30bc2"
+      }
+    ],
+    "code-review@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "~/.claude/plugins/cache/claude-plugins-official/code-review/ae037753b107",
+        "version": "ae037753b107",
+        "installedAt": "2026-03-31T17:51:14.059Z",
+        "lastUpdated": "2026-04-21T21:18:22.873Z",
+        "gitCommitSha": "9d4a7d57a106dcd9b3a83f85caada141e5d30bc2"
+      }
+    ]
+  }
+}

@@ -77,6 +77,7 @@ Run all relevant dimensions for the scope. Skip dimensions that clearly don't ap
 - Are non-obvious design decisions explained?
 - Are there footguns with no warning?
 - Is there behavior that only makes sense with tribal knowledge?
+- Invoke `/discover` to check if documentation exists externally (Confluence, wiki) that isn't referenced from the code — undiscoverable docs are almost as bad as no docs
 
 ### 7. Architectural Gaps *(macro/meso scope)*
 *(use `/brain` design mode thinking for this dimension)*

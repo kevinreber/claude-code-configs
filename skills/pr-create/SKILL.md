@@ -53,7 +53,7 @@ Create a pull request with proper formatting following project guidelines.
     Scan the diff and commits to identify follow-up items. Only include items that are actually relevant — skip any that don't apply.
 
     Check for:
-    - **Documentation**: Did you add/change a public API, config option, CLI command, or user-facing behavior without updating docs (README, docstrings, wiki)?
+    - **Documentation**: Did you add/change a public API, config option, CLI command, or user-facing behavior without updating docs (README, docstrings, wiki, Confluence)?
     - **Tests**: Are there new code paths, edge cases, or error handling without corresponding tests?
     - **Migration/schema**: Did you add a DB migration, schema change, or data format change that needs coordination (rollback plan, backfill, backward compatibility)?
     - **Configuration**: Did you add new env vars, feature flags, or config entries that need to be set in staging/production?

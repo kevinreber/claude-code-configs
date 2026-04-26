@@ -44,7 +44,6 @@ def _iso_to_local_date(iso_ts: str) -> str:
 
 def _mcp_server_and_tool(tool_name: str) -> tuple[str, str]:
     """Parse `mcp__<server>__<tool>` into (server, tool). Tool name may contain underscores."""
-    # e.g. mcp__github__create_issue → ("github", "create_issue")
     parts = tool_name.split("__", 2)
     if len(parts) == 3:
         return parts[1], parts[2]
