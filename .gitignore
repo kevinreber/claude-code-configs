@@ -26,3 +26,7 @@ node_modules/
 
 # Sync staging (intermediate output of sync/sync.py pass 1)
 .sync-staging/
+
+# Python bytecode
+__pycache__/
+*.pyc
