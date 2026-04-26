@@ -18,10 +18,16 @@ Two-pass flow driven by `sync/sync.py`, preceded by a git preflight:
 
 ## When to invoke
 
+**Event-driven** (primary trigger):
 - "sync my global configs"
 - "pull in my new global skills"
 - "update the repo from ~/.claude/"
 - "refresh this repo with my latest cloud configs"
+- After installing a new plugin globally, getting a plugin auto-update with new skills, or when the user mentions they've been editing skills directly in `~/.claude/`
+
+**Periodic safety net**: every few weeks, even without an explicit prompt, it's reasonable to suggest running this if the user is in the repo and hasn't synced recently. Pass 1 is cheap — it stages and shows a diff; if nothing meaningful changed, the run is a no-op. Don't suggest more often than ~weekly; daily is overkill.
+
+If pass 1 consistently produces no meaningful diffs, that's good — it means the user is editing the repo first and letting `install.sh` push out, rather than editing `~/.claude/` directly. Acknowledge this rather than pushing them to run it more.
 
 ## Steps
 

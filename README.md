@@ -186,6 +186,16 @@ cd ~/claude-code-configs && ./install.sh --all
 4. **For per-device customizations**: use `*.local.md` and `*.local.json` filenames — these are gitignored, so they stay on the device that needs them.
 5. **Conflict prevention**: avoid editing `~/.claude/<file>` directly on a "reader" device. Edit the repo file instead, push, then pull on the writer.
 
+### Cadence
+
+`/sync-from-global` should run when there's drift to capture, not on a fixed schedule:
+
+- **Event-based (primary)**: after you install a new plugin globally, get a plugin update that adds new skills, or notice you've been editing skills directly in `~/.claude/` instead of in the repo.
+- **Periodic safety net (every few weeks)**: even if you don't think anything's drifted, it's worth a pass to catch things you forgot about — plugin auto-updates, skills you tweaked in passing. Pass 1 is cheap (it stages and shows a diff; if nothing meaningful changed, you skip pass 2). Treat it like `git fetch` for your global state.
+- **Don't over-run it**: weekly is fine, daily is overkill. The two-pass review takes ~5 minutes once you know the workflow; running it constantly produces more noise than signal.
+
+If `/sync-from-global` consistently produces no meaningful changes, that's a signal you're doing the right thing — editing the repo first and letting `install.sh` push out, instead of editing `~/.claude/` directly.
+
 ### What about putting `~/.claude/` itself under git (Obsidian-vault style)?
 
 **Not recommended.** Unlike an Obsidian vault (mostly stable text content), `~/.claude/` is a runtime data directory: `activity.db`, `history.jsonl`, `sessions/`, `paste-cache/`, `statsig/`, `projects/` all change constantly and would create endless merge conflicts. Plus, work-device `~/.claude/` contains internal plugins and settings that shouldn't go to a personal/public remote. The two-script flow above keeps the sanitized, sharable parts in git and the runtime/work-specific parts on each device where they belong.
