@@ -24,11 +24,11 @@ Before starting, resolve the current user's identity dynamically:
 All database operations go through the CLI at `~/.claude/bin/activity-db/`. Always run commands from that directory using `uv run python main.py <command>`.
 
 ```bash
-# Write an activity
-uv run python main.py write --date YYYY-MM-DD --category <category> --source <source> --title "..." [--detail "..."] [--url "..."] [--metadata '{}'] [--tag work|personal]
+# Write an activity (device_id auto-detected from hostname; override with --device-id)
+uv run python main.py write --date YYYY-MM-DD --category <category> --source <source> --title "..." [--detail "..."] [--url "..."] [--metadata '{}'] [--tag work|personal] [--device-id <hostname>]
 
-# Write a summary (versioned — re-runs never overwrite, they append a new version)
-uv run python main.py summary --date YYYY-MM-DD --period daily|weekly|monthly|project --type review|recap|standup|brag --content "..."
+# Write a summary (versioned — re-runs never overwrite, they append a new version; scoped by device_id)
+uv run python main.py summary --date YYYY-MM-DD --period daily|weekly|monthly|project --type review|recap|standup|brag --content "..." [--device-id <hostname>]
 
 # Query activities
 uv run python main.py query --date YYYY-MM-DD
@@ -223,39 +223,80 @@ For each project (sorted by prompt count descending):
 - **References** — all extracted URLs and Jira ticket IDs
 
 #### Impact & Accomplishments
-Write **specific, concrete impact statements** derived from the actual prompts. Detect types: PR shipped, PR reviewed, PR feedback addressed, production issue resolved, feature implemented, testing added, documentation, tooling/automation.
+Write **specific, concrete impact statements** — not echoed prompts. Every accomplishment should answer "what changed and why it matters."
 
-#### Patterns & Optimization Opportunities
-Same as `/daily-review`: repeated skills, context switches, manual data pasting, environment friction, iterative refinement.
+Rules:
+- **Never** echo back the user's prompt text as an accomplishment. "i think we have some daily recap..." is not an accomplishment.
+- Detect concrete outcomes: PR shipped/reviewed, bug fixed, feature implemented, investigation completed, decision made, doc written, tooling improved.
+- Each statement should follow the pattern: **What** was done + **why it matters** or **what it unblocked**.
+- On light days (< 10 prompts), write 1-2 real statements or omit the section entirely. A short day with no concrete output should say "Light session — exploratory/setup work, no shipped artifacts."
+- On heavy days, cap at 6-8 statements — pick the ones with real impact, not every small edit.
 
-#### Transcript-derived sections (NEW — requires prior enrichment)
+#### Transcript-derived sections (requires prior enrichment)
 
-Before rendering, run `uv run python main.py enrich-from-transcripts --date YYYY-MM-DD` to ensure today's sessions have transcript-derived rows in `activities`. Then query those rows and render:
+Before rendering, run `uv run python main.py enrich-from-transcripts --date YYYY-MM-DD` to ensure today's sessions have transcript-derived rows in `activities`. Then query and render the following sections. Only include each section if there's data. If no enrichment data exists, skip all of them silently.
 
-**Files touched**
+**Files Touched**
 ```bash
-uv run python main.py query --sql "SELECT DISTINCT json_extract(metadata, '$.file_path') AS file_path FROM activities WHERE date='YYYY-MM-DD' AND category='file_edit' ORDER BY file_path"
+uv run python main.py query --sql "SELECT json_extract(metadata, '$.file_path') AS file_path, COUNT(*) AS edits FROM activities WHERE date='YYYY-MM-DD' AND category='file_edit' GROUP BY file_path ORDER BY edits DESC"
 ```
-Group by project/folder, show counts of edits per file.
+Render as a list grouped by project/repo, with edit counts. Strip the home directory prefix for readability. Only include source code and meaningful files — skip temp files (`/tmp/*`), lock files, and `.pyc`.
 
-**Commands run**
+**Commands Run**
 ```bash
 uv run python main.py query --sql "SELECT json_extract(metadata, '$.command') AS cmd, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category='command' GROUP BY cmd ORDER BY n DESC LIMIT 15"
 ```
-Show top distinct bash commands by frequency.
+Show top distinct bash commands by frequency. Cluster related commands (e.g., "17 pytest runs", "11 flake8/ruff cycles") rather than listing each invocation.
 
-**Tool usage summary**
+**Tool Usage Summary**
 ```bash
 uv run python main.py query --sql "SELECT json_extract(metadata, '$.tool') AS tool, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category IN ('tool_use','file_edit','command','mcp_call','plan') GROUP BY tool ORDER BY n DESC"
 ```
 Show total tool invocations, broken down by tool name.
 
-**MCP call summary** (for cross-tool work)
+**MCP Call Summary** (cross-tool work)
 ```bash
 uv run python main.py query --sql "SELECT json_extract(metadata, '$.mcp_server') AS server, json_extract(metadata, '$.mcp_tool') AS tool, COUNT(*) AS n FROM activities WHERE date='YYYY-MM-DD' AND category='mcp_call' GROUP BY server, tool ORDER BY n DESC LIMIT 10"
 ```
 
-Only include each section if there's data. If the day's sessions haven't been enriched (no activities with `category IN ('tool_use','file_edit','command','mcp_call')`), skip these sections silently or show a one-line note.
+#### Critical Review
+
+This is the most important section. Be **brutally honest** — the user specifically wants highly critical, insightful feedback that helps them optimize how they work. Don't sugarcoat.
+
+Analyze the day's data across these dimensions and call out anything worth flagging:
+
+**Time & Focus**
+- How fragmented was the day? Count project switches. More than 5 switches in a 3-hour block = thrashing. Name the projects and suggest which should have been batched or deferred.
+- Were there long gaps between prompts that suggest getting stuck, distracted, or blocked? Quantify them.
+- Did any single project get less than 15 minutes of attention? That's too short to make real progress — was it worth the context switch?
+- Was there a deep work block (2+ hours on one project)? If not, flag it. Deep work is where real output happens.
+
+**Output vs. Effort**
+- Compare prompt count to concrete output (PRs, features shipped, bugs fixed, decisions made). High prompts with low output = spinning wheels.
+- Were there repeated attempts at the same thing? (e.g., 17 pytest runs, multiple "can you fix" prompts on the same issue). Identify the root cause — was the approach wrong, was there a missing skill, or was this unavoidable iteration?
+- Did the user paste content that Claude could have fetched itself? (e.g., pasting error output instead of running the command, pasting docs instead of using MCP). Each paste is manual work that might be automatable.
+
+**Decision Quality**
+- Were there signs of indecision? ("should we...", "what do you think...", "i'm not sure if..."). Indecision isn't bad, but if it recurred on the same topic across multiple prompts, the user may need to timebox decisions.
+- Were there scope creep moments? (started on X, ended up doing Y, Z). Flag them.
+- Were there "going in circles" patterns? (asking the same question rephrased, or reverting changes).
+
+**Automation & Process**
+- What manual work was repeated that could be automated? (e.g., running the same sequence of commands, manually checking the same dashboards).
+- Are there missing skills or tools that would have saved time? Be specific — "a pre-commit hook for X" or "a script that does Y" not "consider automation."
+- Was the user doing work that could be delegated to a CI/CD pipeline, a cron job, or a background process?
+
+**Compared to Recent Days** (if data available)
+- Query the last 7 days from the DB: `SELECT date, COUNT(*) FROM activities WHERE date >= date('YYYY-MM-DD', '-7 days') GROUP BY date`
+- Is today's output higher or lower than the trend? Is the project mix shifting?
+- Are the same friction points recurring across days?
+
+Format as a numbered list of specific, actionable observations. Each item should have:
+1. **The observation** — what you noticed, with data
+2. **Why it matters** — the cost of not addressing it
+3. **What to do about it** — a concrete next step
+
+Aim for 3-6 items. Quality over quantity. Skip this section entirely only if the day was under 5 prompts.
 
 ### Step 4: Store the generated summary
 
@@ -267,7 +308,115 @@ uv run python main.py summary \
   --content "<full markdown output>"
 ```
 
-### Step 5: Update brag doc
+### Step 5: Write to Obsidian vault
+
+If the brain-vault repo exists at `~/Projects/brain-vault/`, save the generated markdown to `Activity/`.
+
+**File naming depends on device:**
+- Detect device type by checking `hostname`:
+  - If hostname contains `.linkedin.biz` or matches the work laptop pattern → **work** device
+  - Otherwise → **personal** device
+- **Work device** file names (default, no suffix):
+  - `Activity/YYYY-MM-DD.md`
+- **Personal device** file names (suffixed):
+  - `Activity/YYYY-MM-DD-personal.md`
+
+**Frontmatter** — always include:
+```yaml
+---
+type: activity
+date: YYYY-MM-DD
+period: daily
+device: work|personal
+tags:
+  - activity
+  - daily-log
+---
+```
+
+**Do NOT overwrite** — if the target file already exists, skip this step silently. The vault file is a snapshot; regeneration updates the DB summary (versioned), not the vault file.
+
+**Wikilinks** — wrap all project names in `[[wikilinks]]` (e.g., `[[brain-vault]]`, `[[neo-workflow]]`) so Obsidian graph view and backlinks connect activity logs to project notes.
+
+### Step 6: Enrich Project Notes
+
+For each project that had **5+ prompts** in the day, update its project note in `~/Projects/brain-vault/Projects/`.
+
+**If the project note doesn't exist**, create it:
+```yaml
+---
+type: project
+status: active
+category: personal|work
+last_seen: YYYY-MM-DD
+---
+
+## Overview
+
+<!-- auto:daily-context:start -->
+<!-- auto:daily-context:end -->
+
+## Notes
+```
+
+**If the project note already exists**, update the `<!-- auto:daily-context:start/end -->` block. If that block doesn't exist, add it **after `## Overview`** (or after `## Auto-generated context` if that section exists). Never touch content outside the auto block.
+
+The auto block should contain a **running log** of what was done on this project, appended to (not replaced). Format:
+
+```markdown
+<!-- auto:daily-context:start -->
+
+### YYYY-MM-DD
+- **What:** 1-2 sentence summary of what was done
+- **How:** Key technical details, tools used, commands, architecture decisions
+- **Problems solved:** Non-obvious solutions worth remembering (e.g., "Tika race condition on cold boot — services need staggered startup")
+- **Status:** Current state (deployed, PR open, WIP, blocked on X)
+- **Links:** [[related-project]], PR URLs, doc URLs
+
+### YYYY-MM-DD (previous entry preserved)
+...
+
+<!-- auto:daily-context:end -->
+```
+
+**Also update frontmatter:**
+- Set `last_seen` to today's date
+- If `status: stub` and there's now real content, promote to `status: active`
+
+This is critical for the vault's purpose as an external brain — project notes should answer "what is this project and what have I done with it?" not just "how many times was it mentioned."
+
+### Step 7: Extract Ideas & Backlog
+
+Scan the day's prompts for signals of ideas, future plans, or things to explore:
+- "i'd like to...", "maybe we should...", "another feature i'm thinking of..."
+- "we should add...", "it would be cool if...", "i want to explore..."
+- "can we automate...", "is there a way to..."
+- Questions about tools/services not yet used
+
+Append any found items to `~/Projects/brain-vault/Backlog/ideas.md`. If the file doesn't exist, create it:
+
+```yaml
+---
+type: backlog
+---
+
+# Ideas & Backlog
+
+Pending ideas extracted from daily activity. Review periodically — promote to project notes or archive.
+```
+
+Each idea entry:
+```markdown
+## YYYY-MM-DD — <short title>
+- **From:** [[project-name]] session
+- **Idea:** What the user described wanting
+- **Context:** Why it came up
+- **Status:** open
+```
+
+**Do NOT duplicate** — check if a similar idea already exists before adding. Append only genuinely new ideas.
+
+### Step 8: Update brag doc
 
 Append new accomplishments to `~/.claude/daily-logs/BRAG-DOC.md` (same as `/daily-review`).
 
