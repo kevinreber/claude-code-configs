@@ -9,6 +9,9 @@ import re
 import sys
 from pathlib import Path
 
+import platform
+import socket
+
 import libsql_experimental as libsql
 
 # Paths
@@ -16,6 +19,15 @@ CLAUDE_DIR = Path.home() / ".claude"
 ENV_FILE = CLAUDE_DIR / "turso.env"
 DB_FILE = CLAUDE_DIR / "activity.db"
 DAILY_LOGS_DIR = CLAUDE_DIR / "daily-logs"
+
+
+def get_device_id():
+    """Return a stable identifier for this machine.
+
+    Uses the hostname, which is already used in the sessions table
+    (e.g. 'kreber-mn1802.linkedin.biz' for work, 'kevinrebers-MacBook-Pro.local' for personal).
+    """
+    return socket.gethostname()
 
 
 def load_env():
@@ -66,8 +78,9 @@ def cmd_init(args):
             url TEXT,
             metadata TEXT,
             tag TEXT DEFAULT 'work',
+            device_id TEXT NOT NULL DEFAULT '',
             created_at TEXT DEFAULT (datetime('now')),
-            UNIQUE(date, category, source, title)
+            UNIQUE(date, category, source, title, device_id)
         )
     """)
 
@@ -80,8 +93,9 @@ def cmd_init(args):
             content TEXT NOT NULL,
             metadata TEXT,
             version INTEGER NOT NULL DEFAULT 1,
+            device_id TEXT NOT NULL DEFAULT '',
             created_at TEXT DEFAULT (datetime('now')),
-            UNIQUE(date, period, type, version)
+            UNIQUE(date, period, type, version, device_id)
         )
     """)
 
@@ -134,46 +148,48 @@ def cmd_init(args):
 def cmd_write(args):
     """Insert an activity row."""
     conn = get_connection()
+    device_id = args.device_id or get_device_id()
 
     try:
         conn.execute(
-            """INSERT OR IGNORE INTO activities (date, category, source, title, detail, url, metadata, tag)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            """INSERT OR IGNORE INTO activities (date, category, source, title, detail, url, metadata, tag, device_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (args.date, args.category, args.source, args.title,
-             args.detail, args.url, args.metadata, args.tag or "work"),
+             args.detail, args.url, args.metadata, args.tag or "work", device_id),
         )
         conn.commit()
         conn.sync()
-        print(f"Wrote activity: [{args.source}] {args.category} — {args.title}")
+        print(f"Wrote activity: [{args.source}] {args.category} — {args.title} (device: {device_id})")
     except Exception as e:
         print(f"Error writing activity: {e}", file=sys.stderr)
         sys.exit(1)
 
 
 def cmd_summary(args):
-    """Insert a new versioned summary. Existing summaries for the same (date, period, type)
+    """Insert a new versioned summary. Existing summaries for the same (date, period, type, device_id)
     are preserved — a new version is appended instead of overwriting."""
     conn = get_connection()
+    device_id = args.device_id or get_device_id()
 
-    # Compute next version for this (date, period, type).
+    # Compute next version for this (date, period, type, device_id).
     cur = conn.execute(
         """SELECT COALESCE(MAX(version), 0) + 1 FROM summaries
-           WHERE date = ? AND period = ? AND type = ?""",
-        (args.date, args.period, args.type),
+           WHERE date = ? AND period = ? AND type = ? AND device_id = ?""",
+        (args.date, args.period, args.type, device_id),
     )
     next_version = cur.fetchone()[0]
 
     conn.execute(
-        """INSERT INTO summaries (date, period, type, content, metadata, version)
-           VALUES (?, ?, ?, ?, ?, ?)""",
-        (args.date, args.period, args.type, args.content, args.metadata, next_version),
+        """INSERT INTO summaries (date, period, type, content, metadata, version, device_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (args.date, args.period, args.type, args.content, args.metadata, next_version, device_id),
     )
     conn.commit()
     conn.sync()
     if next_version == 1:
-        print(f"Saved {args.period} {args.type} summary for {args.date} (v1)")
+        print(f"Saved {args.period} {args.type} summary for {args.date} (v1, device: {device_id})")
     else:
-        print(f"Saved {args.period} {args.type} summary for {args.date} (v{next_version}, {next_version - 1} prior version(s) preserved)")
+        print(f"Saved {args.period} {args.type} summary for {args.date} (v{next_version}, {next_version - 1} prior version(s) preserved, device: {device_id})")
 
 
 def cmd_query(args):
@@ -415,6 +431,7 @@ def cmd_enrich_from_transcripts(args):
     if not target_sessions:
         return
 
+    device_id = get_device_id()
     total_events = 0
     sessions_processed = 0
     sessions_skipped_missing = 0
@@ -439,6 +456,7 @@ def cmd_enrich_from_transcripts(args):
                 ev["url"],
                 metadata_json,
                 ev["tag"],
+                device_id,
             ))
 
         events_for_session = 0
@@ -446,8 +464,8 @@ def cmd_enrich_from_transcripts(args):
             try:
                 conn.executemany(
                     """INSERT OR IGNORE INTO activities
-                       (date, category, source, title, detail, url, metadata, tag)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                       (date, category, source, title, detail, url, metadata, tag, device_id)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     rows_to_insert,
                 )
                 events_for_session = len(rows_to_insert)
@@ -525,7 +543,8 @@ def cmd_backfill(args):
         print("No daily log files found.", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Found {len(log_files)} daily log files to backfill...")
+    device_id = get_device_id()
+    print(f"Found {len(log_files)} daily log files to backfill... (device: {device_id})")
     total_activities = 0
     total_summaries = 0
 
@@ -536,9 +555,9 @@ def cmd_backfill(args):
         # Store the full log as a summary
         try:
             conn.execute(
-                """INSERT OR IGNORE INTO summaries (date, period, type, content)
-                   VALUES (?, 'daily', 'review', ?)""",
-                (date, content),
+                """INSERT OR IGNORE INTO summaries (date, period, type, content, device_id)
+                   VALUES (?, 'daily', 'review', ?, ?)""",
+                (date, content, device_id),
             )
             total_summaries += 1
         except Exception:
@@ -583,9 +602,9 @@ def cmd_backfill(args):
             try:
                 conn.execute(
                     """INSERT OR IGNORE INTO activities
-                       (date, category, source, title, detail, metadata, tag)
-                       VALUES (?, 'project_activity', 'claude', ?, ?, ?, ?)""",
-                    (date, project_name, detail, metadata, tag),
+                       (date, category, source, title, detail, metadata, tag, device_id)
+                       VALUES (?, 'project_activity', 'claude', ?, ?, ?, ?, ?)""",
+                    (date, project_name, detail, metadata, tag, device_id),
                 )
                 total_activities += 1
             except Exception:
@@ -599,9 +618,9 @@ def cmd_backfill(args):
                     try:
                         conn.execute(
                             """INSERT OR IGNORE INTO activities
-                               (date, category, source, title, detail, tag)
-                               VALUES (?, 'skill_usage', 'claude', ?, ?, ?)""",
-                            (date, skill, project_name, tag),
+                               (date, category, source, title, detail, tag, device_id)
+                               VALUES (?, 'skill_usage', 'claude', ?, ?, ?, ?)""",
+                            (date, skill, project_name, tag, device_id),
                         )
                         total_activities += 1
                     except Exception:
@@ -623,9 +642,9 @@ def cmd_backfill(args):
             try:
                 conn.execute(
                     """INSERT OR IGNORE INTO activities
-                       (date, category, source, title, url, tag)
-                       VALUES (?, ?, 'extracted', ?, ?, 'work')""",
-                    (date, cat, url.split("/")[-1][:100], url),
+                       (date, category, source, title, url, tag, device_id)
+                       VALUES (?, ?, 'extracted', ?, ?, 'work', ?)""",
+                    (date, cat, url.split("/")[-1][:100], url, device_id),
                 )
                 total_activities += 1
             except Exception:
@@ -637,9 +656,9 @@ def cmd_backfill(args):
             try:
                 conn.execute(
                     """INSERT OR IGNORE INTO activities
-                       (date, category, source, title, tag)
-                       VALUES (?, 'jira', 'extracted', ?, 'work')""",
-                    (date, ticket),
+                       (date, category, source, title, tag, device_id)
+                       VALUES (?, 'jira', 'extracted', ?, 'work', ?)""",
+                    (date, ticket, device_id),
                 )
                 total_activities += 1
             except Exception:
@@ -657,9 +676,9 @@ def cmd_backfill(args):
                 try:
                     conn.execute(
                         """INSERT OR IGNORE INTO activities
-                           (date, category, source, title, tag)
-                           VALUES (?, 'accomplishment', 'claude', ?, 'work')""",
-                        (date, item[:200]),
+                           (date, category, source, title, tag, device_id)
+                           VALUES (?, 'accomplishment', 'claude', ?, 'work', ?)""",
+                        (date, item[:200], device_id),
                     )
                     total_activities += 1
                 except Exception:
@@ -736,6 +755,8 @@ def main():
     write_p.add_argument("--url", default=None)
     write_p.add_argument("--metadata", default=None)
     write_p.add_argument("--tag", default="work")
+    write_p.add_argument("--device-id", dest="device_id", default=None,
+                         help="Override device identifier (default: hostname)")
 
     # summary
     summary_p = subparsers.add_parser("summary", help="Insert/update a summary")
@@ -744,6 +765,8 @@ def main():
     summary_p.add_argument("--type", required=True, choices=["review", "recap", "standup", "brag"])
     summary_p.add_argument("--content", required=True)
     summary_p.add_argument("--metadata", default=None)
+    summary_p.add_argument("--device-id", dest="device_id", default=None,
+                           help="Override device identifier (default: hostname)")
 
     # query
     query_p = subparsers.add_parser("query", help="Query activities")
