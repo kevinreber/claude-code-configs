@@ -173,6 +173,9 @@
   "_skill_normalization_comment": "Loose ~/.claude/skills/<name>.md files get normalized to skills/<name>/SKILL.md in the repo.",
   "normalize_loose_skills": true,
 
+  "_repo_only_comment": "Paths (relative to repo root) that are personal-only and must NOT be overwritten by sync --apply. Supports globs. These files were created directly in the repo and don't exist on the work laptop — sync should never touch them.",
+  "repo_only_paths": [],
+
   "_review_flag_comment": "Files matching these globs are flagged for manual review in the diff report (don't trust full automation).",
   "manual_review_globs": [
     "skills/discover/**",

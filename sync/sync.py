@@ -266,6 +266,7 @@ def pass_one(cfg: dict) -> dict:
         "manual_review": [],
         "new_in_source": [],
         "repo_only": [],
+        "repo_only_protected": [],
         "unchanged": [],
         "modified": [],
     }
@@ -307,6 +308,9 @@ def pass_one(cfg: dict) -> dict:
 
             if redacted:
                 summary["redacted"].append(rel_dest)
+
+            if is_repo_only(rel_dest, cfg):
+                summary["repo_only_protected"].append(rel_dest)
 
             if any(fnmatch.fnmatch(rel_dest, g) for g in review_globs):
                 summary["manual_review"].append(rel_dest)
@@ -358,6 +362,7 @@ def print_summary(summary: dict) -> None:
     section("Unchanged", summary["unchanged"], cap=10)
     section("Redacted (sanitization rules fired)", summary["redacted"])
     section("Manual review recommended", summary["manual_review"])
+    section("Repo-only protected (in repo_only_paths — will NOT be overwritten on apply)", summary["repo_only_protected"])
     section("Repo-only (in repo but not in ~/.claude — NOT touched on apply)", summary["repo_only"])
     section("Skipped (not synced from source)", summary["skipped"], cap=20)
 
@@ -370,26 +375,43 @@ def print_summary(summary: dict) -> None:
     print("=" * 60)
 
 
+def is_repo_only(rel_path: str, cfg: dict) -> bool:
+    """True if rel_path matches any entry in repo_only_paths (literal or glob)."""
+    for pat in cfg.get("repo_only_paths", []):
+        if rel_path == pat or fnmatch.fnmatch(rel_path, pat):
+            return True
+    return False
+
+
 def pass_two() -> None:
-    """Copy .sync-staging/ → repo paths."""
+    """Copy .sync-staging/ → repo paths, respecting repo_only_paths."""
     if not STAGING_DIR.exists():
         print("ERROR: no staging dir found. Run pass 1 first: python3 sync/sync.py")
         sys.exit(1)
 
+    cfg = load_config()
     count = 0
+    skipped_repo_only = []
     for staged in STAGING_DIR.rglob("*"):
         if not staged.is_file():
             continue
-        rel = staged.relative_to(STAGING_DIR)
+        rel = str(staged.relative_to(STAGING_DIR))
+        if is_repo_only(rel, cfg):
+            skipped_repo_only.append(rel)
+            continue
         dest = REPO_ROOT / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(staged, dest)
         count += 1
 
     print(f"Applied {count} files to repo.")
+    if skipped_repo_only:
+        print(f"Protected {len(skipped_repo_only)} repo-only files (not overwritten):")
+        for p in sorted(skipped_repo_only):
+            print(f"  {p}")
     print("Review with: git status && git diff")
     print(f"Clean up staging when ready: rm -rf {STAGING_DIR.relative_to(REPO_ROOT)}/")
-    log_event("apply", f"copied={count}")
+    log_event("apply", f"copied={count} protected={len(skipped_repo_only)}")
 
 
 def main() -> None:

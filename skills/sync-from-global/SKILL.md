@@ -81,6 +81,7 @@ If the user asks to **tune the rules**: edit `sync/sync-config.json`, then re-ru
 - Add a regex to `drop_line_patterns` (strip lines mentioning a specific tool/term)
 - Add a `redaction_rules` entry (replace a string with something generic)
 - Add a glob to `manual_review_globs` (flag a file for human review)
+- Add a path to `repo_only_paths` (protect personal-only files from being overwritten by sync)
 - Add/remove a plugin from `enabled_plugins_allowlist`
 
 If the user asks to **inspect a specific file**: read both the source and staging version side-by-side.

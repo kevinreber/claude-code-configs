@@ -54,6 +54,7 @@ The `/sync-from-global` skill (in `skills/sync-from-global/SKILL.md`) wraps this
   - `drop_permission_patterns` — `permissions.allow` entries containing any of these substrings get dropped
   - `hook_command_drop_patterns` — hooks whose `command` field matches any pattern get dropped
 - **`known_marketplaces_allowlist`** — which plugin marketplaces survive in `known_marketplaces.json`.
+- **`repo_only_paths`** — paths (relative to repo root, supports globs) that are personal-only and must NOT be overwritten by `--apply`. These files were created directly in the repo, not synced from work. Pass 1 flags them; pass 2 skips them.
 - **`manual_review_globs`** — files flagged for manual review in pass 1's summary (because automated redaction can't fully clean them).
 - **`normalize_loose_skills`** — if true, loose `~/.claude/skills/foo.md` files get reshaped to repo's `skills/foo/SKILL.md` directory layout.
 
