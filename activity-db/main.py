@@ -198,6 +198,15 @@ def cmd_query(args):
 
     if args.sql:
         cursor = conn.execute(args.sql)
+        if not cursor.description:
+            conn.commit()
+            try:
+                conn.sync()
+            except Exception:
+                pass
+            affected = getattr(cursor, "rowcount", -1)
+            print(f"OK ({affected} row(s) affected)" if affected >= 0 else "OK")
+            return
         cols = [d[0] for d in cursor.description]
         rows = cursor.fetchall()
         results = [dict(zip(cols, row)) for row in rows]

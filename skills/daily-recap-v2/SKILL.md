@@ -88,13 +88,40 @@ Without MCP servers, the recap will use GitHub CLI + Claude Code history, which 
 
 ## How It Works
 
+### Phase 0: Sync health check (always first)
+
+Before any data collection, verify the local activity-db replica is in sync with Turso. The embedded libsql replica can wedge silently for weeks (e.g. `wal_insert_frame failed` errors), causing all subsequent writes to fail or land only locally.
+
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py stats 2>&1 | tail -5
+```
+
+If `stats` errors out with a `libsql::sync` / `wal_insert_frame failed` message:
+1. Confirm the local replica is recoverable. Use a direct (non-replica) libsql connection to count remote rows; compare to local. If only a handful of rows are local-only, the local replica is safe to discard.
+2. Back up `~/.claude/activity.db` + `~/.claude/activity.db-info` to `~/.claude/activity-db-backups/pre-rebuild-<timestamp>/`.
+3. Delete the local replica (`rm ~/.claude/activity.db ~/.claude/activity.db-info ~/.claude/activity.db-wal ~/.claude/activity.db-shm`).
+4. Re-run `stats` — libsql will fresh-replicate from Turso.
+5. Only then proceed with Phase 1.
+
+This step matters because Turso sync failures are silent in normal usage. Without this check, the recap will appear to succeed while writing into a stale local DB that never reaches the cloud.
+
 ### Phase 1: Gather from all sources (parallel)
 
 Fan out data collection across all sources **in parallel** using the Agent tool or sequential tool calls. For the target date(s), collect and write to DB:
 
 #### Source 1: Claude Code (local — always available)
 
-Read `~/.claude/history.jsonl` and filter for the target date. For each project:
+Read `~/.claude/history.jsonl` and filter for the target date.
+
+**Web-app cross-check (critical).** Claude Code's **web app** does not write to `~/.claude/history.jsonl` — sessions there only show up downstream (GitHub PRs, commits, brain-vault PRs). If `history.jsonl` is empty for the target date, this does **not** mean "no work" — it might mean "web-app day." Always cross-check via `gh search prs` and `git log --author --since` across `~/Projects/*` before declaring zero activity.
+
+Web-app signatures:
+- Commit author email is `noreply@anthropic.com`
+- Branch name starts with `claude/`
+- Multiple commits within minutes (fast iterations)
+- Watch for **timezone drift** — `gh search prs` uses UTC, but `git log --date=iso` preserves local time. A PR created at 2026-05-16T00:48Z is actually 2026-05-15 17:48 PT.
+
+For web-app-derived activity, set `--device-id claude-code-web` on the writes and use a `-web.md` suffix on the vault recap file. For each project:
 ```bash
 uv run python main.py write \
   --date YYYY-MM-DD \

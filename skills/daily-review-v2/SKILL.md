@@ -132,8 +132,11 @@ def load_history():
 ### Project tagging
 
 Each project is tagged as `personal` or `work` based on its path:
-- **Personal:** project path contains `/personal/`
-- **Work:** everything else (default)
+- **Personal:** project path contains `/personal/`, **or** the path is under `~/Projects/` AND the device hostname does **not** match the work pattern (`*.linkedin.biz` or other work-laptop signature)
+- **Work:** project path is under `~/Documents/code/` (the LinkedIn work tree), or any path on a work-tagged device, or any path mentioning a known work repo
+- **Mixed (vault frontmatter only):** if a day has both `work` and `personal` tagged activities, set the vault file's frontmatter `tag: mixed`. Individual DB rows keep their own `work`/`personal` tag.
+
+This heuristic intentionally handles the common case where personal projects (e.g. `~/Projects/aura`, `~/Projects/brain-vault`) live outside any `personal/` directory but are unambiguously personal because the user is on their personal laptop.
 
 ### Reference extraction
 
@@ -148,9 +151,45 @@ Extract all URLs and identifiers from prompt text:
 
 ## Mode: Daily (default)
 
+### Step 0a: Sync health check
+
+Before any DB writes, verify the activity-db Turso replica isn't wedged. The libsql embedded replica can fail silently for weeks.
+
+```bash
+cd ~/.claude/bin/activity-db && uv run python main.py stats 2>&1 | tail -5
+```
+
+If you see `wal_insert_frame failed` or a `libsql::sync` error: back up `~/.claude/activity.db*`, delete the local replica, and let it re-replicate from Turso on next connection. Don't proceed until `stats` returns cleanly.
+
+### Step 0b: Cross-check GitHub for web-app blind spot
+
+**Before** parsing `history.jsonl`, check whether the target date has GitHub artifacts (PRs, commits) authored by the user but no local Claude Code history. This catches **Claude Code web-app** sessions, which never write to `~/.claude/history.jsonl` but still produce real commits + PRs.
+
+Run in parallel with Step 1:
+
+```bash
+# PRs authored / touched by the user on the target date (timezone-aware — use ISO date span)
+gh search prs --author=@me --created=YYYY-MM-DD..YYYY-MM-DD --json number,title,state,url,createdAt,updatedAt,closedAt,repository --limit 50
+
+# Commits in known user repos on the target date (use --date=iso for tz preservation)
+for repo in ~/Projects/*/.git; do
+  cd "$(dirname "$repo")" && git log --author="<full_name>" --since=YYYY-MM-DD --until=YYYY-MM-DD+1 --format="%ad | %h | %s" --date=iso
+done
+```
+
+**Web-app signatures to look for:**
+- Commit author email is `noreply@anthropic.com`
+- Branch name starts with `claude/`
+- Multiple commits within a few minutes (web-app sessions are fast)
+- Empty `~/.claude/history.jsonl` for the date despite real PR / commit artifacts
+
+If the date has GitHub activity but no local history, generate a **web-app recap** instead of (or in addition to) the local-history review. Use `--device-id claude-code-web` on activity-db writes and a `-web.md` suffix on the vault file. Skip Step 1's `history.jsonl` parsing for that date and reconstruct the timeline from commits + PR metadata.
+
 ### Step 1: Parse history and extract activities
 
 Parse `history.jsonl` for the target date. Extract projects, prompts, skills, references, time blocks — same logic as `/daily-review`.
+
+**If `history.jsonl` is empty for the date AND Step 0 found no GitHub activity either, skip the date entirely** — no review file, no DB summary. Don't write empty placeholders.
 
 ### Step 2: Write structured data to SQLite
 
