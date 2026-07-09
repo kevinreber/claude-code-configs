@@ -71,6 +71,7 @@ Specialized capabilities for domain-specific tasks:
 - `testing` - Test writing and coverage analysis
 - `git-workflow` - Branching strategies and git operations
 - `gsd-methodology` - Get-Shit-Done workflow methodology
+- `fable` - Fable-class working discipline (outcome-first output, finish-the-turn autonomy) for smaller models
 
 ### Hooks
 Event-driven automations:

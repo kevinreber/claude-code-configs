@@ -83,6 +83,12 @@ def apply_redactions(text: str, cfg: dict) -> str:
         text = "".join(kept)
 
     # Apply replacements
+    return apply_replacement_rules(text, cfg)
+
+
+def apply_replacement_rules(text: str, cfg: dict) -> str:
+    """Redaction replacements only — safe for serialized JSON, where the
+    line-dropping rules in apply_redactions could break validity."""
     for rule in cfg.get("redaction_rules", []):
         pat, repl = rule["pattern"], rule["replacement"]
         if rule.get("regex"):
@@ -144,7 +150,7 @@ def sanitize_settings_json(text: str, cfg: dict) -> str:
             else:
                 del data["hooks"][event_name]
 
-    return json.dumps(data, indent=2) + "\n"
+    return apply_replacement_rules(json.dumps(data, indent=2), cfg) + "\n"
 
 
 def sanitize_marketplaces_json(text: str, cfg: dict) -> str:
@@ -161,7 +167,7 @@ def sanitize_marketplaces_json(text: str, cfg: dict) -> str:
             entry["installLocation"] = entry["installLocation"].replace(
                 "/Users/kreber/", "~/"
             )
-    return json.dumps(filtered, indent=2) + "\n"
+    return apply_replacement_rules(json.dumps(filtered, indent=2), cfg) + "\n"
 
 
 def sanitize_installed_plugins_json(text: str, cfg: dict) -> str:
@@ -177,7 +183,7 @@ def sanitize_installed_plugins_json(text: str, cfg: dict) -> str:
             for e in entries:
                 if "installPath" in e:
                     e["installPath"] = e["installPath"].replace("/Users/kreber/", "~/")
-    return json.dumps(data, indent=2) + "\n"
+    return apply_replacement_rules(json.dumps(data, indent=2), cfg) + "\n"
 
 
 def map_source_to_dest(src_rel: str, cfg: dict) -> Path | None:
