@@ -79,6 +79,14 @@ For feature PRs, the description must help reviewers understand the change deepl
 ## Summary
 - Bullet points describing what this feature does and why it was added
 
+## Screenshots
+<!-- REQUIRED for any UI change: show the final UI inline (rendered, not just a link).
+See the "embedding screenshots" note in Important Notes for how to make images render in a
+PR body, including on private repos. Use a Before | After table when a comparison helps. -->
+| Before | After |
+|--------|-------|
+| <img> | <img> |
+
 ## Feature Diagram
 <ASCII or Mermaid diagram showing the architecture, data flow, or component relationships.
 Use Mermaid (```mermaid ... ```) for component/flow diagrams when the feature has multiple
@@ -115,3 +123,11 @@ Concrete inputs/scenarios anyone can run to verify the feature works:
 - Use Conventional Commits format for commit messages (feat, fix, docs, etc.)
 - Always add Co-Authored-By footer to commits
 - Use HEREDOC format for multi-line commit messages and PR bodies
+- **UI changes: show the final UI inline in the PR body**, not just a linked file.
+  Capture with Playwright or a headless browser and save to a real file path (a browser
+  MCP extension often cannot persist a capture where you can attach it). To make an image
+  RENDER inline: on a public repo any raw image URL works, but on a **private repo** `gh`
+  cannot upload to GitHub user-attachments and `raw.githubusercontent.com` needs a token —
+  so commit the PNG into the repo and reference it with a commit-SHA-pinned blob URL,
+  `![alt](https://github.com/<owner>/<repo>/blob/<FULL_SHA>/<path>.png?raw=true)`, which
+  renders for authenticated viewers and keeps working after the branch is deleted on merge.
