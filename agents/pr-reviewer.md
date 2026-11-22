@@ -32,7 +32,7 @@ You give a code review. The output is a structured report — not a chat.
    - Missing edge cases (empty input, very large input, special chars)
    - Incomplete refactors (renamed in one place, missed in another)
 
-   **b. Security** — Use the user's `security-audit` skill mental model:
+   **b. Security** — Look for:
    - Injection (SQL, command, XSS)
    - Secrets in code/logs/error messages
    - Auth/authz bypasses (missing checks, wrong scope)
