@@ -159,7 +159,7 @@ This repo is designed to be the **shared, sanitized superset** of Claude Code co
 
 ### Sync direction 1: device → repo (`/sync-from-global`)
 
-Pulls your global `~/.claude/` configs into the repo, stripping work-specific content (LinkedIn plugins, Captain MCP, work email, internal URLs). Two-pass with diff review — see [`skills/sync-from-global/SKILL.md`](skills/sync-from-global/SKILL.md).
+Pulls your global `~/.claude/` configs into the repo, stripping work-specific content (internal plugins and MCP servers, work email, internal URLs). Two-pass with diff review — see [`skills/sync-from-global/SKILL.md`](skills/sync-from-global/SKILL.md).
 
 **Important: this is additive, never destructive.**
 - Pass 2 only **copies** staged files into the repo. It does not delete.
