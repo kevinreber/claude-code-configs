@@ -14,6 +14,7 @@ This is a **configuration and documentation repo**, not a software project. Ther
 claude-code-configs/
 ├── install.sh              # Main installer — copies configs to ~/.claude/
 ├── README.md               # User-facing documentation
+├── agents/                 # Reusable custom agents
 ├── commands/               # Slash commands (.md files → ~/.claude/commands/)
 │   ├── gsd.md              # /gsd — Get-Shit-Done workflow
 │   ├── commit.md           # /commit — smart commit messages
@@ -22,13 +23,11 @@ claude-code-configs/
 │   ├── docs.md             # /docs — documentation generator
 │   └── architect.md        # /architect — system design assistance
 ├── skills/                 # Skill files (.md → ~/.claude/skills/)
-│   ├── git-workflow.md     # Git branching and operations
-│   ├── gsd-methodology.md  # GSD workflow methodology
-│   ├── code-review.md      # Code review checklist
-│   ├── testing.md          # Test writing and coverage
-│   ├── security-audit.md   # Security vulnerability scanning
-│   ├── api-design.md       # REST/GraphQL API design
-│   └── database.md         # Schema design and query optimization
+│   ├── validate/           # Multi-lens change validation
+│   ├── pr-pipeline/        # Pull-request lifecycle orchestration
+│   ├── diagram/            # Diagram source, references, and render helpers
+│   ├── perf-sweep/         # Evidence-backed performance scan
+│   └── docs-drift/         # Documentation drift audit
 ├── hooks/                  # Hook configurations and examples
 │   ├── README.md
 │   └── examples/           # Example hook patterns
@@ -54,8 +53,8 @@ claude-code-configs/
 │   ├── filesystem.json
 │   ├── sqlite.json
 │   └── ...
+├── settings/               # Global settings and personal instructions
 └── statusline/             # Custom Claude Code statusline script
-    └── README.md
 ```
 
 ## Installation
@@ -66,6 +65,7 @@ claude-code-configs/
 
 # Install specific components
 ./install.sh --commands     # Slash commands only
+./install.sh --agents       # Custom agents only
 ./install.sh --skills       # Skills only
 ./install.sh --hooks        # Hooks only
 ./install.sh --guardrails   # Guardrails only
@@ -77,6 +77,7 @@ claude-code-configs/
 
 Files are copied to `~/.claude/`:
 - `commands/` → `~/.claude/commands/`
+- `agents/` → `~/.claude/agents/`
 - `skills/` → `~/.claude/skills/`
 - `activity-db/` → `~/.claude/bin/activity-db/`
 
@@ -90,9 +91,9 @@ Files are copied to `~/.claude/`:
 
 ### Adding a New Skill
 
-1. Create `skills/<name>.md`
-2. Skills are markdown files with instructions for specialized tasks
-3. Name in `kebab-case`
+1. Create `skills/<name>/SKILL.md`
+2. Add YAML frontmatter with `name` and a precise trigger description
+3. Put references and helper scripts under the same skill directory
 
 ### Adding a Hook Example
 
@@ -108,11 +109,14 @@ Files are copied to `~/.claude/`:
 
 ### Updating MCP Server Configs
 
-MCP server configs in `mcp-servers/` are JSON files for `~/.claude/claude_desktop_config.json`. Each file documents the server configuration for a specific tool or service.
+MCP server configs are templates that point to locally installed, reviewed
+executables. Never replace them with auto-download commands. Install only
+approved servers and keep permissions and credentials least-privilege.
 
 ## File Naming Conventions
 
-- Slash commands and skills: `kebab-case.md`
+- Slash commands: `kebab-case.md`
+- Skills: `skills/kebab-case/SKILL.md`
 - MCP servers: `kebab-case.json`
 - Templates: in `templates/<project-type>/CLAUDE.md`
 - All markdown header: `# Title` matching the file's purpose
@@ -125,7 +129,7 @@ This repo serves as the **sanitized, portable hub** for Claude Code configs acro
 
 | Device | Role | Has work-specific skills? | Sync direction |
 |---|---|---|---|
-| **Work laptop** | Primary authoring device | Yes (LinkedIn, Captain MCP, internal CLIs) | `~/.claude/` → repo via `/sync-from-global` |
+| **Work laptop** | Primary authoring device | Yes (private plugins, MCP servers, and internal CLIs) | `~/.claude/` → repo via `/sync-from-global` |
 | **Personal devices** | Consumers + personal-only additions | No | repo → `~/.claude/` via `install.sh` |
 | **This repo** | Sanitized intersection | Never — work secrets are stripped | Hub for both directions |
 
@@ -137,7 +141,7 @@ Work ~/.claude/  ──▶  /sync-from-global  ──▶  This repo  ──▶  
       for most skills)
 ```
 
-- **Work → Repo** (`/sync-from-global`): Sanitizes work-specific content (LinkedIn plugins, internal URLs, work email, Captain MCP) via `sync/sync-config.json` rules. Two-pass with human review before apply. Never auto-commits.
+- **Work → Repo** (`/sync-from-global`): Sanitizes private plugins, internal URLs, work email, and internal integrations via shared rules plus the gitignored local overlay. Two-pass with human review before apply. Never auto-commits.
 - **Repo → Personal** (`install.sh`): Copies or symlinks repo configs into `~/.claude/`. No sanitization needed — repo is already clean.
 - **Personal-only configs**: Some skills/commands exist only in this repo and were never on the work laptop. These are protected by `repo_only_paths` in `sync-config.json` so sync never overwrites them.
 

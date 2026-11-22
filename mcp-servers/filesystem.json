@@ -5,10 +5,8 @@
   "config": {
     "mcpServers": {
       "filesystem": {
-        "command": "npx",
+        "command": "/path/to/reviewed/server-filesystem",
         "args": [
-          "-y",
-          "@modelcontextprotocol/server-filesystem",
           "/path/to/allowed/directory"
         ]
       }
@@ -16,18 +14,19 @@
   },
   "setup": {
     "steps": [
-      "1. Replace '/path/to/allowed/directory' with directories you want to allow access to",
-      "2. You can specify multiple directories as additional arguments",
-      "3. Add the config to your Claude settings file"
+      "1. Review and install an approved filesystem MCP server",
+      "2. Replace the command with its local executable",
+      "3. Replace '/path/to/allowed/directory' with the minimum required directories",
+      "4. Add the config to your Claude settings file"
     ],
     "examples": [
       {
         "description": "Allow access to home directory and projects",
-        "args": ["-y", "@modelcontextprotocol/server-filesystem", "~", "~/projects"]
+        "args": ["~/projects"]
       },
       {
         "description": "Restrict to specific project",
-        "args": ["-y", "@modelcontextprotocol/server-filesystem", "~/my-project"]
+        "args": ["~/my-project"]
       }
     ]
   },

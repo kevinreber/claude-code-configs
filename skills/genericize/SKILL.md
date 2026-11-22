@@ -30,7 +30,7 @@ The user provides one of:
 ### Step 1 — Analyze the source
 
 Read the input and identify:
-- **Core pattern**: What does this skill actually do, abstractly? (e.g., "deploys a service" not "deploys a LinkedIn service via Mint")
+- **Core pattern**: What does this skill actually do, abstractly? (e.g., "deploys a service" not "deploys an internal service with a proprietary tool")
 - **Company-specific elements**: Internal tools, URLs, team names, proprietary CLIs, internal APIs
 - **Generic equivalents**: What standard/open-source tools serve the same purpose?
 - **Reusable structure**: The workflow, checklist, decision tree, or prompt pattern that's valuable regardless of company
@@ -41,10 +41,10 @@ Present the user with a mapping of what will be replaced:
 
 | Work-specific | Generic replacement | Notes |
 |---|---|---|
-| `mint deploy` | Standard deploy CLI (e.g., `kubectl`, `docker`, provider CLI) | Preserves deploy workflow |
+| `internal-deploy deploy` | Standard deploy CLI (e.g., `kubectl`, `docker`, provider CLI) | Preserves deploy workflow |
 | `go/internal-dashboard` | `<your-monitoring-dashboard>` | Placeholder for user to fill |
 | `JIRA-PROJECT-123` | Issue tracker reference | Generic pattern |
-| LinkedIn-specific API patterns | REST/GraphQL best practices | Generalized |
+| Company-specific API patterns | REST/GraphQL best practices | Generalized |
 
 Ask the user to confirm or adjust the mappings before proceeding.
 
@@ -60,7 +60,7 @@ Create the generic version following these principles:
    - `<your-ci-system>` — for CI/CD references
    - `<your-issue-tracker>` — for project management tools
 4. **Add a "Customize" section** at the bottom listing all placeholders the user should fill in for their environment.
-5. **Generalize domain knowledge.** If the work skill encodes expertise about "how LinkedIn handles X," extract the general principle: "how large-scale services handle X."
+5. **Generalize domain knowledge.** If the work skill encodes expertise about "how this organization handles X," extract the general principle: "how large-scale services handle X."
 6. **Keep the frontmatter format** consistent with this repo's conventions:
    ```yaml
    ---

@@ -1,3 +1,8 @@
+---
+name: python
+description: Idiomatic Python patterns, type hints, tooling, and best practices for modern Python development.
+---
+
 # Python Skill
 
 Idiomatic Python patterns, type hints, tooling, and best practices for modern Python development.

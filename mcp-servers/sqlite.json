@@ -5,25 +5,26 @@
   "config": {
     "mcpServers": {
       "sqlite": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-sqlite", "--db-path", "./database.sqlite"]
+        "command": "/path/to/reviewed/server-sqlite",
+        "args": ["--db-path", "./database.sqlite"]
       }
     }
   },
   "setup": {
     "steps": [
-      "1. Replace './database.sqlite' with the path to your SQLite database",
-      "2. Use an absolute path or path relative to where Claude Code runs",
-      "3. Add the config to your Claude settings file"
+      "1. Review and install an approved SQLite MCP server",
+      "2. Replace the command with its local executable",
+      "3. Replace './database.sqlite' with the intended database path",
+      "4. Add the config to your Claude settings file"
     ],
     "examples": [
       {
         "description": "Development database",
-        "args": ["-y", "@modelcontextprotocol/server-sqlite", "--db-path", "./dev.db"]
+        "args": ["--db-path", "./dev.db"]
       },
       {
         "description": "Absolute path",
-        "args": ["-y", "@modelcontextprotocol/server-sqlite", "--db-path", "/home/user/data/app.sqlite"]
+        "args": ["--db-path", "/home/user/data/app.sqlite"]
       }
     ]
   },

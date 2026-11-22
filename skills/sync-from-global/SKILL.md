@@ -1,18 +1,21 @@
 ---
 name: sync-from-global
-description: Sync ~/.claude/ global configs into this repo, sanitizing work-specific content (LinkedIn plugins, Captain MCP, work email, internal URLs). Use when the user wants to refresh this repo from their global Claude configs, pull in newly added skills/commands, or update sanitization rules. Two-pass flow with diff review before commit.
+description: Sync ~/.claude/ global configs into this repo while stripping private plugins, internal URLs, user identifiers, and device-only paths. Use when the user wants to refresh this repo from global Claude configs, pull in newly added skills or commands, or update sanitization rules. Two-pass flow with diff review before commit.
 ---
 
 # Sync from global
 
-This skill syncs the user's global Claude config (`~/.claude/`) into this repo, stripping LinkedIn-specific content so the result is portable across personal devices. The repo's `install.sh` goes the other direction (repo → global); this skill is the reverse.
+This skill syncs the user's global Claude config (`~/.claude/`) into this repo,
+stripping private and device-specific content so the result is portable across
+personal devices. The repo's `install.sh` goes the other direction (repo →
+global); this skill is the reverse.
 
 ## How it works
 
 Two-pass flow driven by `sync/sync.py`, preceded by a git preflight:
 
 0. **Preflight — sync with origin**: `git fetch` + `git pull --ff-only` so we don't stage onto stale state. Aborts if the working tree is dirty or remote has diverged.
-1. **Pass 1 — stage**: walks `~/.claude/`, applies skip rules and redaction patterns from `sync/sync-config.json`, writes sanitized output to `.sync-staging/` (gitignored), prints a summary diff.
+1. **Pass 1 — stage**: walks `~/.claude/`, applies shared rules from `sync/sync-config.json` plus any private rules in `sync/sync-config.local.json`, writes sanitized output to `.sync-staging/` (gitignored), and prints a summary diff.
 2. **User review**: user inspects the diff, optionally tunes `sync-config.json`, optionally re-runs pass 1.
 3. **Pass 2 — apply**: copies `.sync-staging/` → final repo paths. User then reviews `git diff` and commits.
 
@@ -65,7 +68,7 @@ This will:
 After pass 1 completes, do **all** of the following:
 
 1. Show the user the **counts** from each section (new, modified, redacted, manual review, repo-only).
-2. **Always** run `diff -u <repo-file> .sync-staging/<file>` for **every file** in the "Manual review recommended" list and show the diffs inline. These files have heavy LinkedIn refs (Captain MCP, JIRA, Confluence) that automated redaction can't fully clean — the staged version may actually be **worse** than the repo's existing hand-cleaned version. If so, recommend the user either:
+2. **Always** run `diff -u <repo-file> .sync-staging/<file>` for **every file** in the "Manual review recommended" list and show the diffs inline. These files may contain private integrations that automated redaction cannot safely clean, so the staged version may be worse than the existing hand-cleaned version. If so, recommend the user either:
    - **Delete** the file from `.sync-staging/` (keeps repo version untouched on apply), or
    - **Tune** `sync-config.json` rules and re-run pass 1, or
    - **Manually edit** the staging file before apply
@@ -76,7 +79,9 @@ Do **not** proceed to pass 2 without explicit user approval.
 
 ### Step 3 — handle user feedback
 
-If the user asks to **tune the rules**: edit `sync/sync-config.json`, then re-run pass 1. Common adjustments:
+If the user asks to **tune the rules**: edit the portable shared config or the
+gitignored `sync/sync-config.local.json` for private terms, then re-run pass 1.
+Common adjustments:
 - Add a glob to `skip_paths` (skip a whole file/dir)
 - Add a regex to `drop_line_patterns` (strip lines mentioning a specific tool/term)
 - Add a `redaction_rules` entry (replace a string with something generic)
@@ -109,6 +114,7 @@ Then:
 ## Files in this system
 
 - `sync/sync.py` — the script (Python stdlib only, runs anywhere)
-- `sync/sync-config.json` — declarative skip + redaction rules; edit to tune behavior
+- `sync/sync-config.json` — portable shared skip and redaction rules
+- `sync/sync-config.local.json` — optional private, gitignored overlay
 - `.sync-staging/` — gitignored, intermediate output of pass 1
 - `skills/sync-from-global/SKILL.md` — this file

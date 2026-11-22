@@ -1,11 +1,30 @@
 ---
 name: validate
-description: Thoroughly validate recent changes through 6 independent analysis passes — implementation correctness, integration/side effects, adversarial failure analysis, observability, test quality, operational readiness — followed by a synthesis pass that cross-references all findings. Use after making changes to confirm they'll work as expected.
+description: Validate recent changes through correctness, integration, adversarial failure, observability, test-quality, and operational-readiness analysis, then return a concise issue-focused verdict.
 ---
 
 # Validate Changes
 
 Perform six independent validation passes on recent changes, each with a distinct lens, followed by a synthesis pass that cross-references all findings. Designed to catch what any single review pass would miss.
+
+## Feedback policy
+
+- Keep the final response issue-focused and factual.
+- Do not generate praise sections or narrate every pass.
+- Consolidate duplicate findings by root cause.
+- Include detailed output only for failures, actionable issues, or material
+  uncertainty.
+
+## Independent review strategy
+
+For non-trivial changes, perform three independent read-only analyses when
+subagents are available, or three deliberate fresh passes otherwise. Keep each
+pass blind to the others, merge the union of candidate findings, and verify
+every candidate against the actual source before reporting it. Trivial
+documentation or formatting changes need only one pass.
+
+Run build, test, lint, and type-check commands once against the real repository
+state; mechanical checks do not need independent duplication.
 
 ## Phase 0: Scope the Changes
 
@@ -76,7 +95,8 @@ Check for:
 ### Dependencies
 - Do the changes depend on anything that might not be available in all environments?
 - Are new imports/packages available in production, not just dev?
-- If the behavior of a dependency is unclear, invoke `/discover` to find authoritative documentation before assuming
+- If dependency behavior is unclear, read its authoritative documentation or
+  source before assuming
 
 ### State & Shared Resources
 - Do changes affect global state, shared caches, or databases in ways that could impact other operations?
@@ -244,27 +264,6 @@ Check for:
 
 ---
 
-## Phase 1: Run Build & Tests (if applicable)
-
-If a build or test command is available, run it mechanically:
-
-1. **Detect test runner:**
-   - Check for `Makefile`, `package.json`, `pom.xml`, `go.mod`, `Cargo.toml`, `pytest.ini`, etc.
-   - Prefer: `make test`, `npm test`, `go test ./...`, `cargo test`, `pytest`, `./gradlew test`
-
-2. **Run tests:**
-   ```bash
-   <detected test command>
-   ```
-   Report: pass count, failure count, any failures with full output.
-
-3. **If tests fail:**
-   - Identify which tests failed and why
-   - Determine if the failure is from the new changes or pre-existing
-   - Report clearly
-
----
-
 ## Pass 7: Synthesis & Cross-Reference
 
 **Lens: "What does the full picture tell us that no single pass could?"**
@@ -309,7 +308,8 @@ If a build or test command is available, run it mechanically:
    ```bash
    <detected test command>
    ```
-   Report: pass count, failure count, any failures with full output.
+   Report concise pass, failure, and skip counts. Include only the failure
+   excerpt needed to identify the cause.
 
 3. **If tests fail:**
    - Identify which tests failed and why
@@ -320,62 +320,34 @@ If a build or test command is available, run it mechanically:
 
 ## Phase 3: Validation Verdict
 
-After all passes and tests, produce a final verdict:
+After all passes and tests, produce one compact, consolidated report:
 
 ```
-## Validation Report
+## Validation
 
-**Goal:** <stated intent>
-**Changed files:** <list>
+**Verdict:** <High confidence | Needs attention | Do not ship>
+**Scope:** <one sentence describing what was validated>
 
----
+### Issues
+- [SEVERITY] `file:line` — <issue, impact, and required fix>
 
-### Pass 1 — Implementation Correctness
-<findings, or "No issues found">
+### Checks
+- <grouped test, build, lint, or type-check result>
 
-### Pass 2 — Integration & Side Effects
-<findings, or "No issues found">
-
-### Pass 3 — Adversarial Analysis
-<findings, or "No issues found">
-
-### Pass 4 — Observability
-<findings, or "No issues found">
-
-### Pass 5 — Test Quality
-<findings, or "No issues found">
-
-### Pass 6 — Operational Readiness
-<findings, or "No issues found">
-
-### Pass 7 — Synthesis
-<cross-cutting findings, root causes, combined risks — or "No compounding issues identified">
-
-### Build & Tests
-<results, or "Skipped — no test command detected">
-
----
-
-### Consolidated Issue List (priority order)
-- [CRITICAL] <issue> — must fix before shipping
-- [MAJOR] <issue> — strongly recommended fix
-- [MINOR] <issue> — fix if time allows
-- [WARN] <issue> — monitor post-deploy
-
-### Verdict: <one of below>
-
-✅ HIGH CONFIDENCE — All passes clean. Changes are correct and safe to ship.
-
-⚠️  NEEDS ATTENTION — Issues found that should be resolved before shipping.
-
-❌ DO NOT SHIP — Critical issues found that are likely to cause failures in production.
+### Limitations
+- <only unresolved uncertainty or environment limitation>
 ```
+
+If no issues were found, replace the Issues section with
+`No actionable issues found.` Omit Limitations when empty. Prefer one to three
+grouped check bullets.
 
 ---
 
 ## Important Notes
 
 - **Do not skip passes** — each pass catches what the others miss
+- **Do not publish the pass-by-pass analysis** — synthesize it
 - **Pass 7 must not re-examine code** — it reasons only from prior pass findings
 - **State findings as specific scenarios**, not vague concerns: "If `user` is null, line 47 will panic" not "null handling might be an issue"
 - **Distinguish real issues from hypotheticals** — mark theoretical concerns as `[WARN - THEORETICAL]` vs confirmed issues `[ISSUE - CONFIRMED]`
@@ -383,3 +355,5 @@ After all passes and tests, produce a final verdict:
 - **Be honest about confidence** — if you can't determine whether something is safe without running the code, say so
 - If the user says "quick validate" or "fast check", run only Passes 1, 3, and 7
 - If the user says "deep validate", expand each pass with additional file reads and grep searches across the codebase
+- If validation findings lead to fixes, re-run focused checks and at least one
+  complete validation pass before claiming the result is clean

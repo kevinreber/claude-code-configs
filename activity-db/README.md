@@ -26,13 +26,13 @@ That's it for local-only usage. Turso sync is optional — see below.
 | Dependency | Version | Install |
 |---|---|---|
 | **Python** | 3.13+ | `brew install python` or [python.org](https://www.python.org/downloads/) |
-| **uv** | latest | `brew install uv` or `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| **uv** | latest | Install through an approved package manager after reviewing the package |
 
 ### Optional (for cross-device sync)
 
 | Dependency | Purpose | Install |
 |---|---|---|
-| **Turso CLI** | Create and manage Turso databases | `brew install tursodatabase/tap/turso` or `curl -sSfL https://get.tur.so/install.sh \| bash` |
+| **Turso CLI** | Create and manage Turso databases | Install through an approved package manager after reviewing the package |
 | **Turso account** | Free tier is sufficient | `turso auth signup` |
 
 ## Installation
@@ -74,7 +74,7 @@ Turso gives you cross-device sync — your activity data is available on any mac
 brew install tursodatabase/tap/turso
 
 # Linux / WSL
-curl -sSfL https://get.tur.so/install.sh | bash
+# Use an approved package or installation method after reviewing it.
 ```
 
 ### Step 2: Sign up / log in

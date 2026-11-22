@@ -1,17 +1,23 @@
 # sync
 
-Pulls configs from `~/.claude/` into this repo, sanitizing work-specific content along the way. The reverse direction (repo → `~/.claude/`) is handled by the top-level `install.sh`.
+Pulls configs from `~/.claude/` into this repo, sanitizing private or
+device-specific content along the way. The reverse direction (repo →
+`~/.claude/`) is handled by the top-level `install.sh`.
 
 ## Why this exists
 
-`~/.claude/` typically mixes work and personal configs (LinkedIn plugins, Captain MCP, internal URLs, work email). This repo is meant to be the **sanitized, sharable union** of generic configs across multiple devices. The script in here automates that sanitization with a diff-review checkpoint.
+`~/.claude/` typically mixes portable configuration with private plugins,
+internal URLs, user identifiers, and device-only paths. This repo is meant to
+be the **sanitized, sharable union** of generic configs across multiple devices.
+The script automates that sanitization with a diff-review checkpoint.
 
 ## Files
 
 | File | Purpose |
 |---|---|
 | `sync.py` | Two-pass sync script. Pass 1 stages to `.sync-staging/` with a diff summary; pass 2 (`--apply`) copies staging → repo. |
-| `sync-config.json` | Declarative rules: skip lists, redaction patterns, drop-line patterns, manual-review globs, plugin allowlists. Edit and re-run pass 1 to refine. |
+| `sync-config.json` | Portable shared rules: skip lists, redaction patterns, manual-review globs, and plugin allowlists. |
+| `sync-config.local.json` | Optional gitignored private overlay for company-, user-, or device-specific rules. Lists and dictionaries are merged into the shared config. |
 | `sync-history.log` | Append-only audit trail. One line per pass-1 / apply, with timestamp + counts. |
 
 ## Quick reference
@@ -47,7 +53,7 @@ The `/sync-from-global` skill (in `skills/sync-from-global/SKILL.md`) wraps this
 - **`skip_globs`** — glob patterns for skipping (e.g., `**/.venv/**`, `**/*.env`).
 - **`redact_globs`** — file types where text redaction is applied (`**/*.md`, `**/*.json`, etc.). Files not matching are copied verbatim.
 - **`redaction_rules`** — string/regex find-and-replace within file content. Use for in-prose substitutions like `Kevin Reber` → `<your-name>`.
-- **`drop_line_patterns`** — regexes that, if any matches a line, drop the entire line. Aggressive — use for whole-line internal-tool references (e.g., `mcp__captain__`, `linkedin-cli-tools`).
+- **`drop_line_patterns`** — regexes that, if any matches a line, drop the entire line. Aggressive; keep private tool names in `sync-config.local.json`.
 - **`strip_blocks`** — multi-line markers; content between them (and the markers) gets removed. E.g., `<!-- CLAUDE_ONLY_START --> ... <!-- CLAUDE_ONLY_END -->`.
 - **`settings_json`** — special handling for `~/.claude/settings.json`:
   - `enabled_plugins_allowlist` — which plugins survive in the synced settings
@@ -67,13 +73,13 @@ The `/sync-from-global` skill (in `skills/sync-from-global/SKILL.md`) wraps this
 
 ## Adding new redaction rules
 
-When pass 1 surfaces a leak (something LinkedIn-specific reaches the staged output), edit `sync-config.json`:
+When pass 1 surfaces private content, edit `sync-config.local.json`:
 
-1. **Whole-line tool reference** (`mcp__captain__foo`, `linkedin-cli-tools`): add to `drop_line_patterns`.
-2. **In-prose word/name** (`Kevin Reber`, `confetti`, `neo-workflow`): decide between:
+1. **Whole-line private tool reference**: add it to `drop_line_patterns`.
+2. **In-prose word/name**: decide between:
    - `drop_line_patterns` — drops the whole line, can leave malformed example blocks
    - `redaction_rules` — replaces with a placeholder, preserves line structure
-3. **Whole-file LinkedIn-only artifact** (a LinkedIn-only skill, plugin, or rule file): add to `skip_paths`.
+3. **Whole-file private artifact**: add it to `skip_paths`.
 4. **File where automation can't be trusted**: add to `manual_review_globs`. Pass 1 will flag it for human review.
 
 Then re-run pass 1 to verify, before pass 2.

@@ -1,3 +1,8 @@
+---
+name: typescript
+description: Idiomatic TypeScript patterns, strict mode best practices, and tooling for type-safe development.
+---
+
 # TypeScript Skill
 
 Idiomatic TypeScript patterns, strict mode best practices, and tooling for type-safe development.

@@ -46,10 +46,6 @@
     "tasks",
     "telemetry",
     "todos",
-    "rules/captain.md",
-    "skills/captain-refresh",
-    "skills/mint-build",
-    "skills/mint-build-cfg",
     "plugins/cache",
     "plugins/data",
     "plugins/marketplaces",
@@ -84,62 +80,10 @@
     "**/*.yml"
   ],
 
-  "redaction_rules": [
-    {
-      "_comment": "Replace home dir with ~",
-      "pattern": "/Users/kreber/",
-      "replacement": "~/",
-      "regex": false
-    },
-    {
-      "_comment": "Replace personal-device home dir with ~",
-      "pattern": "/Users/kevinreber/",
-      "replacement": "~/",
-      "regex": false
-    },
-    {
-      "_comment": "Replace work email",
-      "pattern": "kreber@linkedin\\.com",
-      "replacement": "<your-email>",
-      "regex": true
-    },
-    {
-      "_comment": "Replace user's full name in prose/examples",
-      "pattern": "Kevin Reber",
-      "replacement": "<your-name>",
-      "regex": false
-    },
-    {
-      "_comment": "Replace LDAP/username — case-sensitive, word-boundary regex to avoid mid-word matches",
-      "pattern": "\\bkreber\\b",
-      "replacement": "<your-username>",
-      "regex": true
-    }
-  ],
+  "redaction_rules": [],
 
   "_drop_lines_comment": "Lines matching ANY of these regexes are removed entirely. Aggressive — drops whole lines, can leave malformed example blocks. Tune if too greedy.",
-  "drop_line_patterns": [
-    "mcp__captain__",
-    "captain-refresh",
-    "linkedin-cli-tools",
-    "linkedin-framework",
-    "linkedin-dev-workflow",
-    "linkedin-plugin-creator",
-    "linkedin-plugins",
-    "li-plugin-tool",
-    "mae-core",
-    "nimbus-agent",
-    "observe-agent",
-    "library-specs",
-    "@linkedin-plugins",
-    "linkedin\\.com",
-    "linkedin\\.atlassian\\.net",
-    "LinkedIn",
-    "lieventscorp00",
-    "confetti",
-    "neo-workflow",
-    "kreber@linkedin\\.com"
-  ],
+  "drop_line_patterns": [],
 
   "_strip_block_comment": "Multi-line blocks delimited by these markers are removed. Markers are stripped, content inside dropped.",
   "strip_blocks": [
@@ -164,22 +108,10 @@
     ],
     "drop_permission_patterns": [
       "daily-logs",
-      "BRAG-DOC",
-      "/Users/kreber/"
+      "BRAG-DOC"
     ],
     "_hook_drop_comment": "Hooks whose 'command' field matches any of these regexes are dropped. Catches hooks that invoke internal CLIs or paths.",
-    "hook_command_drop_patterns": [
-      "linkedin",
-      "captain",
-      "mint(?:\\s|$)",
-      "curli",
-      "grpcurli",
-      "lix-cli",
-      "kafka-tool",
-      "acl-tool",
-      "kubectl-in",
-      "/Users/kreber/"
-    ]
+    "hook_command_drop_patterns": []
   },
 
   "_marketplaces_comment": "Only these plugin marketplaces are kept in known_marketplaces.json.",
@@ -195,7 +127,6 @@
 
   "_review_flag_comment": "Files matching these globs are flagged for manual review in the diff report (don't trust full automation).",
   "manual_review_globs": [
-    "skills/discover/**",
     "skills/daily-recap/**",
     "skills/daily-recap-v2/**",
     "skills/daily-review/**",

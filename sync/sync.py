@@ -7,7 +7,8 @@ Two-pass flow:
   Pass 2: python3 sync/sync.py --apply
           → copies staging → final repo paths
 
-Rules live in sync/sync-config.json. Edit and re-run pass 1 to refine.
+Rules live in sync/sync-config.json, with private device-specific additions in
+sync/sync-config.local.json. Edit and re-run pass 1 to refine.
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = REPO_ROOT / "sync" / "sync-config.json"
+LOCAL_CONFIG_PATH = REPO_ROOT / "sync" / "sync-config.local.json"
 STAGING_DIR = REPO_ROOT / ".sync-staging"
 HISTORY_LOG = REPO_ROOT / "sync" / "sync-history.log"
 
@@ -36,9 +38,28 @@ def log_event(event: str, detail: str = "") -> None:
         f.write(line)
 
 
+def merge_config(base: dict, overlay: dict) -> dict:
+    """Merge an optional private overlay into the portable shared config."""
+    merged = dict(base)
+    for key, value in overlay.items():
+        if key.startswith("_"):
+            continue
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+            merged[key] = merge_config(merged[key], value)
+        elif key in merged and isinstance(merged[key], list) and isinstance(value, list):
+            merged[key] = [*merged[key], *value]
+        else:
+            merged[key] = value
+    return merged
+
+
 def load_config() -> dict:
     with CONFIG_PATH.open() as f:
-        return json.load(f)
+        config = json.load(f)
+    if LOCAL_CONFIG_PATH.exists():
+        with LOCAL_CONFIG_PATH.open() as f:
+            config = merge_config(config, json.load(f))
+    return config
 
 
 def expand(p: str) -> Path:
@@ -67,6 +88,9 @@ def is_text_file(path: Path) -> bool:
 
 
 def apply_redactions(text: str, cfg: dict) -> str:
+    home = str(Path.home())
+    text = text.replace(f"{home}/", "~/")
+
     # Strip multi-line blocks first
     for block in cfg.get("strip_blocks", []):
         start, end = re.escape(block["start"]), re.escape(block["end"])
@@ -126,7 +150,7 @@ def sanitize_settings_json(text: str, cfg: dict) -> str:
     # Drop user-specific statusLine path → make generic
     if "statusLine" in data and "command" in data["statusLine"]:
         data["statusLine"]["command"] = data["statusLine"]["command"].replace(
-            "/Users/kreber/", "~/"
+            f"{Path.home()}/", "~/"
         )
 
     # Filter hooks: drop entries whose command matches any deny pattern
@@ -165,7 +189,7 @@ def sanitize_marketplaces_json(text: str, cfg: dict) -> str:
     for entry in filtered.values():
         if "installLocation" in entry:
             entry["installLocation"] = entry["installLocation"].replace(
-                "/Users/kreber/", "~/"
+                f"{Path.home()}/", "~/"
             )
     return apply_replacement_rules(json.dumps(filtered, indent=2), cfg) + "\n"
 
@@ -182,7 +206,9 @@ def sanitize_installed_plugins_json(text: str, cfg: dict) -> str:
         for entries in data["plugins"].values():
             for e in entries:
                 if "installPath" in e:
-                    e["installPath"] = e["installPath"].replace("/Users/kreber/", "~/")
+                    e["installPath"] = e["installPath"].replace(
+                        f"{Path.home()}/", "~/"
+                    )
     return apply_replacement_rules(json.dumps(data, indent=2), cfg) + "\n"
 
 
@@ -332,7 +358,7 @@ def pass_one(cfg: dict) -> dict:
                 summary["modified"].append(rel_dest)
 
     # Detect files in repo but not in staging (these are NOT deleted; just informational)
-    tracked_dirs = ["commands", "skills"]
+    tracked_dirs = [".claude/agents", "commands", "skills"]
     for d in tracked_dirs:
         repo_dir = REPO_ROOT / d
         if not repo_dir.exists():

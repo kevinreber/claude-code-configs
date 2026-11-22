@@ -59,13 +59,17 @@ ls skills/
 ```
 
 Relevant for most projects:
-- `git-workflow.md` — Always useful
-- `code-review.md` — For PR-based workflows
+- `validate` — Verify recent changes
+- `pr-create`, `pr-review`, `pr-comments-fix` — PR-based workflows
+- `worktree-gc` — Safe worktree cleanup
 
 Language-specific:
-- `api-design.md` — REST/GraphQL API work
-- `database.md` — Schema/query optimization
-- `testing.md` — Test writing
+- `python`, `go`, `rust`, `typescript`, `react`, `bash`
+
+Specialized:
+- `diagram` — Architecture and process diagrams
+- `perf-sweep` — Evidence-backed performance analysis
+- `docs-drift` — Documentation accuracy audits
 
 ### 5. Recommend MCP Servers
 

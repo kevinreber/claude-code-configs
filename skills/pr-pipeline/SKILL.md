@@ -144,6 +144,7 @@ Close every run with this, in the conversation:
 
 - **The pipeline composes skills; it does not reimplement them.** When a phase says invoke `validate` or `pr-review`, invoke that skill and follow it. Duplicating their logic here means the two drift apart.
 - **Do not auto-commit on a PR you do not own.** Not even a formatting fix. Suggest it in a comment.
+- **Never merge, close, or force-push a pull request.**
 - **Three rounds is a ceiling, not a target.** Most PRs converge in one or two. Burning three rounds on a small diff produces manufactured findings.
 - **Report honestly.** If the tests failed, show the output. If you skipped a phase, name it in the Skipped section. If findings were capped or filtered out, say how many and why.
 - **Never post a review comment you have not verified against the actual diff.** A confidently wrong inline comment costs the author more time than no review at all.

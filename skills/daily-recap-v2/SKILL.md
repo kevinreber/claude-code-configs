@@ -428,7 +428,7 @@ If the brain-vault repo exists at `~/Projects/brain-vault/`, save the generated 
 
 **File naming depends on device:**
 - Detect device type by checking `hostname`:
-  - If hostname contains `.linkedin.biz` or matches the work laptop pattern → **work** device
+  - If `ACTIVITY_DEVICE_TYPE=work` or the hostname matches a private local work-laptop pattern → **work** device
   - Otherwise → **personal** device
 - **Work device** file names (default, no suffix):
   - `Activity/recap-YYYY-MM-DD.md`

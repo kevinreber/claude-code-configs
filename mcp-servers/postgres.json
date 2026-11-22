@@ -5,8 +5,8 @@
   "config": {
     "mcpServers": {
       "postgres": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-postgres"],
+        "command": "/path/to/reviewed/server-postgres",
+        "args": [],
         "env": {
           "POSTGRES_CONNECTION_STRING": "${DATABASE_URL}"
         }
@@ -15,9 +15,9 @@
   },
   "setup": {
     "steps": [
-      "1. Set DATABASE_URL environment variable with your PostgreSQL connection string",
-      "2. Format: postgresql://user:password@host:port/database",
-      "3. Or replace ${DATABASE_URL} with your connection string directly",
+      "1. Review and install an approved PostgreSQL MCP server",
+      "2. Replace the command with its local executable",
+      "3. Set DATABASE_URL to a least-privilege connection string",
       "4. Add the config to your Claude settings file"
     ],
     "requiredEnv": ["DATABASE_URL"],

@@ -5,22 +5,22 @@
   "config": {
     "mcpServers": {
       "memory": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-memory"]
+        "command": "/path/to/reviewed/server-memory",
+        "args": []
       }
     }
   },
   "setup": {
     "steps": [
-      "1. No additional configuration required for basic usage",
-      "2. Add the config to your Claude settings file",
-      "3. Optionally specify a file path for persistent storage"
+      "1. Review and install an approved memory MCP server",
+      "2. Replace the command with its local executable",
+      "3. Add the config to your Claude settings file"
     ],
     "persistentConfig": {
       "mcpServers": {
         "memory": {
-          "command": "npx",
-          "args": ["-y", "@modelcontextprotocol/server-memory"],
+          "command": "/path/to/reviewed/server-memory",
+          "args": [],
           "env": {
             "MEMORY_FILE_PATH": "~/.claude/memory.json"
           }

@@ -1,3 +1,8 @@
+---
+name: react
+description: Idiomatic React patterns, hooks best practices, and performance guidance for modern React development.
+---
+
 # React Skill
 
 Idiomatic React patterns, hooks best practices, and performance guidance for modern React development.

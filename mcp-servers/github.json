@@ -5,8 +5,8 @@
   "config": {
     "mcpServers": {
       "github": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-github"],
+        "command": "/path/to/reviewed/server-github",
+        "args": [],
         "env": {
           "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
         }
@@ -15,9 +15,9 @@
   },
   "setup": {
     "steps": [
-      "1. Create a GitHub Personal Access Token at https://github.com/settings/tokens",
-      "2. Grant permissions: repo, read:org, read:user",
-      "3. Set GITHUB_TOKEN environment variable or replace ${GITHUB_TOKEN} with your token",
+      "1. Review and install an approved GitHub MCP server",
+      "2. Replace /path/to/reviewed/server-github with its local executable",
+      "3. Create a least-privilege GitHub token and set GITHUB_TOKEN",
       "4. Add the config to your Claude settings file"
     ],
     "requiredEnv": ["GITHUB_TOKEN"]

@@ -31,6 +31,7 @@ Usage: ./install.sh [OPTIONS]
 
 Options:
     --all           Install all configurations
+    --agents        Install custom agents
     --commands      Install slash commands
     --skills        Install skills
     --hooks         Install hooks (copies examples)
@@ -106,6 +107,13 @@ install_commands() {
     print_info "Installing slash commands..."
     install_files "$SCRIPT_DIR/commands" "$CLAUDE_DIR/commands" "$USE_SYMLINK" "$DRY_RUN"
     print_success "Slash commands installed"
+}
+
+# Install custom agents
+install_agents() {
+    print_info "Installing custom agents..."
+    install_files "$SCRIPT_DIR/agents" "$CLAUDE_DIR/agents" "$USE_SYMLINK" "$DRY_RUN"
+    print_success "Custom agents installed"
 }
 
 # Install skills (directory-based: skills/<name>/SKILL.md)
@@ -278,7 +286,7 @@ uninstall() {
     read -p "Are you sure? (y/N) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        local dirs=("commands" "skills" "hooks" "guardrails" "templates" "mcp-servers")
+        local dirs=("agents" "commands" "skills" "hooks" "guardrails" "templates" "mcp-servers")
         for dir in "${dirs[@]}"; do
             if [[ -d "$CLAUDE_DIR/$dir" ]]; then
                 rm -rf "$CLAUDE_DIR/$dir"
@@ -295,6 +303,7 @@ uninstall() {
 USE_SYMLINK="false"
 DRY_RUN="false"
 INSTALL_ALL="false"
+INSTALL_AGENTS="false"
 INSTALL_COMMANDS="false"
 INSTALL_SKILLS="false"
 INSTALL_HOOKS="false"
@@ -313,6 +322,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --all)
             INSTALL_ALL="true"
+            shift
+            ;;
+        --agents)
+            INSTALL_AGENTS="true"
             shift
             ;;
         --commands)
@@ -397,6 +410,7 @@ fi
 echo ""
 
 if [[ "$INSTALL_ALL" == "true" ]]; then
+    install_agents
     install_commands
     install_skills
     install_hooks
@@ -406,6 +420,7 @@ if [[ "$INSTALL_ALL" == "true" ]]; then
     install_settings
     install_activity_db
 else
+    [[ "$INSTALL_AGENTS" == "true" ]] && install_agents
     [[ "$INSTALL_COMMANDS" == "true" ]] && install_commands
     [[ "$INSTALL_SKILLS" == "true" ]] && install_skills
     [[ "$INSTALL_HOOKS" == "true" ]] && install_hooks

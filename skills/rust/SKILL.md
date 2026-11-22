@@ -1,3 +1,8 @@
+---
+name: rust
+description: Idiomatic Rust patterns, tooling, and best practices for writing safe, performant code.
+---
+
 # Rust Skill
 
 Idiomatic Rust patterns, tooling, and best practices for writing safe, performant code.

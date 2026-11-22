@@ -6,12 +6,14 @@ A portable collection of reusable Claude Code configurations for consistent AI-a
 
 ```
 .
+├── agents/             # Reusable custom agents
 ├── commands/           # Slash commands (.md files)
 ├── skills/             # Skills for specialized tasks
 ├── hooks/              # Hook configurations (pre/post tool execution)
 ├── templates/          # CLAUDE.md templates for different project types
 ├── guardrails/         # Safety and constraint configurations
 ├── mcp-servers/        # MCP server configurations
+├── settings/           # Global settings and personal instructions
 ├── statusline/         # Custom statusline script and settings
 └── install.sh          # Installation script
 ```
@@ -26,6 +28,7 @@ A portable collection of reusable Claude Code configurations for consistent AI-a
 ### Install Specific Components
 ```bash
 ./install.sh --commands      # Just slash commands
+./install.sh --agents        # Just custom agents
 ./install.sh --skills        # Just skills
 ./install.sh --hooks         # Just hooks
 ./install.sh --guardrails    # Just guardrails
@@ -35,10 +38,18 @@ A portable collection of reusable Claude Code configurations for consistent AI-a
 Copy desired configurations to your `~/.claude/` directory:
 ```bash
 cp -r commands/* ~/.claude/commands/
+cp -r agents/* ~/.claude/agents/
 cp -r skills/* ~/.claude/skills/
 ```
 
 ## Components
+
+### Custom agents (`/agents`)
+- `pr-shepherd` - Safely drive requested PR review, validation, and CI work
+- `config-reviewer` - Review configuration-library changes
+- `pr-reviewer` - Review pull requests with focused findings
+- `setup-guide` - Recommend and install repository components
+- `vault-health-checker`, `vault-researcher` - Maintain and query personal vaults
 
 ### Slash Commands (`/commands`)
 Custom commands invoked with `/command-name` in Claude Code:
@@ -64,14 +75,14 @@ Specialized capabilities for domain-specific tasks:
 - `bash` - Safe scripting, quoting, traps, idempotency, portability
 
 **Workflow skills**:
-- `code-review` - Thorough code review with checklist
-- `security-audit` - Security vulnerability scanning
-- `api-design` - REST/GraphQL API design assistance
-- `database` - Schema design and query optimization
-- `testing` - Test writing and coverage analysis
-- `git-workflow` - Branching strategies and git operations
-- `gsd-methodology` - Get-Shit-Done workflow methodology
 - `fable` - Fable-class working discipline (outcome-first output, finish-the-turn autonomy) for smaller models
+- `validate` - Multi-lens validation of recent changes
+- `pr-create`, `pr-review`, `pr-comments-fix`, `pr-update` - Pull-request lifecycle
+- `pr-pipeline`, `pr-babysit` - End-to-end PR orchestration and monitoring
+- `worktree-gc` - Safe Git worktree inventory and cleanup
+- `diagram` - Editable architecture and process diagrams
+- `perf-sweep` - Evidence-backed performance opportunity scan
+- `docs-drift` - Documentation-versus-implementation audit
 
 ### Hooks
 Event-driven automations:
@@ -96,7 +107,9 @@ Safety constraints and boundaries:
 - `confirmation-required` - Require confirmation for destructive ops
 
 ### MCP Servers
-Model Context Protocol server configurations:
+Model Context Protocol server templates. They intentionally reference local
+placeholder executables: review and install an approved server, then replace
+the command path.
 - `github` - GitHub integration
 - `filesystem` - Extended file operations
 - `database` - Database connections
@@ -159,7 +172,9 @@ This repo is designed to be the **shared, sanitized superset** of Claude Code co
 
 ### Sync direction 1: device → repo (`/sync-from-global`)
 
-Pulls your global `~/.claude/` configs into the repo, stripping work-specific content (internal plugins and MCP servers, work email, internal URLs). Two-pass with diff review — see [`skills/sync-from-global/SKILL.md`](skills/sync-from-global/SKILL.md).
+Pulls your global `~/.claude/` configs into the repo, stripping private
+plugins, internal URLs, user identifiers, and device-only paths. Two-pass with
+diff review — see [`skills/sync-from-global/SKILL.md`](skills/sync-from-global/SKILL.md).
 
 **Important: this is additive, never destructive.**
 - Pass 2 only **copies** staged files into the repo. It does not delete.

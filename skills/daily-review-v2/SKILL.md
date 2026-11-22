@@ -132,8 +132,8 @@ def load_history():
 ### Project tagging
 
 Each project is tagged as `personal` or `work` based on its path:
-- **Personal:** project path contains `/personal/`, **or** the path is under `~/Projects/` AND the device hostname does **not** match the work pattern (`*.linkedin.biz` or other work-laptop signature)
-- **Work:** project path is under `~/Documents/code/` (the LinkedIn work tree), or any path on a work-tagged device, or any path mentioning a known work repo
+- **Personal:** project path contains `/personal/`, **or** the path is under `~/Projects/` and the device is not tagged as work
+- **Work:** `ACTIVITY_DEVICE_TYPE=work`, a private local hostname convention identifies the device as work, or the path identifies a known work repository outside personal roots
 - **Mixed (vault frontmatter only):** if a day has both `work` and `personal` tagged activities, set the vault file's frontmatter `tag: mixed`. Individual DB rows keep their own `work`/`personal` tag.
 
 This heuristic intentionally handles the common case where personal projects (e.g. `~/Projects/aura`, `~/Projects/brain-vault`) live outside any `personal/` directory but are unambiguously personal because the user is on their personal laptop.
@@ -353,7 +353,7 @@ If the brain-vault repo exists at `~/Projects/brain-vault/`, save the generated 
 
 **File naming depends on device:**
 - Detect device type by checking `hostname`:
-  - If hostname contains `.linkedin.biz` or matches the work laptop pattern → **work** device
+  - If `ACTIVITY_DEVICE_TYPE=work` or the hostname matches a private local work-laptop pattern → **work** device
   - Otherwise → **personal** device
 - **Work device** file names (default, no suffix):
   - `Activity/YYYY-MM-DD.md`

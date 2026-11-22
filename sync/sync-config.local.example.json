@@ -1,0 +1,23 @@
+{
+  "_comment": "Copy to sync-config.local.json and add private device-specific rules.",
+  "skip_paths": [
+    "rules/private-tool.md",
+    "skills/private-skill"
+  ],
+  "redaction_rules": [
+    {
+      "pattern": "user@example\\.com",
+      "replacement": "<your-email>",
+      "regex": true
+    }
+  ],
+  "drop_line_patterns": [
+    "private-tool-name",
+    "internal\\.example\\.com"
+  ],
+  "settings_json": {
+    "hook_command_drop_patterns": [
+      "private-tool-name"
+    ]
+  }
+}

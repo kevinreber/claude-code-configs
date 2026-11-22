@@ -25,7 +25,7 @@ Goal: produce a tight "where you left off" briefing in **under 10 seconds of rea
 
 Run these in parallel:
 
-1. **Today's activity log** — `Activity/<YYYY-MM-DD>.md` (work) or `Activity/<YYYY-MM-DD>-personal.md` (personal, hostname does not end in `.linkedin.biz`). If today's file doesn't exist, fall back to the most recent file in `Activity/`.
+1. **Today's activity log** — `Activity/<YYYY-MM-DD>.md` (work) or `Activity/<YYYY-MM-DD>-personal.md` (personal, based on `ACTIVITY_DEVICE_TYPE` or a private local hostname convention). If today's file doesn't exist, fall back to the most recent file in `Activity/`.
 2. **Active projects** — `Glob` for `Projects/*.md`, then `Grep` frontmatter for `status: active`. Cap at 5.
 3. **Open PRs** — `gh pr list --author @me --state open --json number,title,repository,updatedAt --limit 10` (skip silently if `gh` not authed).
 4. **Top of backlog** — first 10 lines of `Backlog/ideas.md`.

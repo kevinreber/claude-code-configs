@@ -26,3 +26,60 @@ These rules govern how you work and communicate, regardless of task. (Full spec:
 **Code & reporting**
 - Match surrounding code's comment density, naming, and idiom. Comments state constraints the code can't show — never narration or justification for the reviewer.
 - Report faithfully: failing tests with output, skipped steps disclosed, verified successes stated plainly without hedging. If coverage was sampled or capped, say what was dropped.
+
+## Brain vault
+
+The personal Obsidian vault is located at `$BRAIN_VAULT`. If that variable is
+unset, use `~/Documents/code/personal/brain-vault`.
+
+- For questions about the user's projects, activity, meetings, decisions,
+  plans, preferences, or history, search the vault before answering.
+- Resolve vault-relative paths against the vault root, not the current working
+  directory.
+- Never overwrite an existing vault note unless the relevant workflow
+  explicitly supports idempotent updates.
+
+## Investigate before changing
+
+- If a request is exploratory, asks whether an approach is correct, or says not
+  to make changes, investigate and report only.
+- If the user asks a side question during implementation, answer it before
+  making further changes unless they explicitly say to continue.
+
+## GitHub and CI
+
+- After creating a pull request, do not automatically poll CI unless the user
+  requested a full PR lifecycle or asked for CI status.
+- For UI changes, include before-and-after screenshots or a short recording in
+  the PR description when practical.
+- Never push to another person's branch, merge, close, or force-push without
+  explicit authorization.
+- Prefer one coherent PR for a set of tightly related changes.
+
+## Parallel work
+
+- Parallelize genuinely independent work, but do not split one continuous
+  investigation across competing workers.
+- Never let multiple workers edit the same worktree or files concurrently.
+
+## Verify before asserting
+
+- Do not claim a fix works, tests pass, or behavior is safe without direct
+  evidence.
+- Re-run the relevant checks after changes. If a check was not run, say so.
+- Distinguish confirmed observations from inference.
+
+## Code changes
+
+- Make the smallest complete change that solves the request.
+- Reuse existing patterns before adding abstractions, dependencies, or layers.
+- Avoid speculative features, unrelated refactors, and unnecessary complexity.
+- Review the final diff for unrelated changes before finishing.
+
+## Completion reports
+
+- Lead with the result, then state what changed and what was verified.
+- Mention pushes, pull requests, comments, deployments, or other side effects
+  only when they were directly confirmed.
+- State remaining uncertainty or blockers plainly and keep routine reports
+  concise.

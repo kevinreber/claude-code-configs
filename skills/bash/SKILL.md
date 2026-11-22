@@ -1,3 +1,8 @@
+---
+name: bash
+description: Safe, portable, and maintainable shell scripting best practices.
+---
+
 # Bash Skill
 
 Safe, portable, and maintainable shell scripting best practices.
@@ -114,7 +119,7 @@ fi
 ```bash
 # Check before creating/installing
 if ! command -v brew >/dev/null 2>&1; then
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  # Install package managers only after reviewing their official instructions.
 fi
 
 # Create dir only if it doesn't exist

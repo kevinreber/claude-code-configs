@@ -94,7 +94,7 @@ Analyze all current changes and organize them into the smallest possible logical
 
       <body>                        ← wrap at 72 chars, explain WHY
 
-      Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+      Co-Authored-By: Claude <noreply@anthropic.com>
       ```
 
    d. Show the message and ask for approval.

@@ -1,11 +1,21 @@
 ---
 name: pr-review
-description: Perform a thorough code review on a PR. Detects the language/framework, posts inline comments with severity labels (CRITICAL/MAJOR/MINOR/NIT/PRAISE) on specific lines, and leaves a single summary comment with overall verdict. Use when the user wants to review a PR, give feedback on a pull request, or do a code review.
+description: Perform an issue-focused review of a pull request, post concise actionable inline comments, and leave a short summary with the overall verdict.
 ---
 
 # PR Review
 
-Perform a deep, expert-level code review. Specialize in the languages and frameworks present in the PR, post granular inline comments with severity labels, and conclude with a comprehensive summary.
+Perform a deep review internally, then post concise, actionable feedback.
+
+## Feedback policy
+
+- Do not generate praise findings or "what is working well" sections.
+- Prefer one issue per inline comment: problem, impact, and concrete fix.
+- Keep inline comments under roughly 100 words and summaries under roughly 200
+  words unless a complex issue requires more.
+- Do not expose internal review mechanics or reviewer personas.
+- For non-trivial PRs, use three independent read-only passes when available,
+  merge the union of findings, and verify each against the diff.
 
 ## Phase 1: Setup & Specialization
 
@@ -39,7 +49,7 @@ Perform a deep, expert-level code review. Specialize in the languages and framew
    - **YAML/Config**: schema correctness, secret exposure, env var usage
    - *(Apply equivalent expertise for any other detected language)*
 
-   State your specialization at the start: e.g. _"Reviewing as a Go + PostgreSQL specialist."_
+   Use the specialization internally rather than announcing a persona.
 
 ---
 
@@ -49,7 +59,7 @@ Perform a deep, expert-level code review. Specialize in the languages and framew
 - Has `feat:` commits, adds new user-facing functionality, new API surface, or new subsystems
 - Or changes 200+ lines across multiple files introducing new behavior
 
-If it **is** a feature PR, check the PR description for these required sections:
+If it **is** a feature PR, check whether these sections are needed and present:
 
 | Section | What to look for |
 |---------|-----------------|
@@ -58,18 +68,18 @@ If it **is** a feature PR, check the PR description for these required sections:
 | **How to Test** | Concrete example inputs/steps with expected outputs anyone can run |
 | **Known Limitations** | Explicit callouts of what's out of scope or has known gaps |
 
-For any missing section, include a top-level comment (not inline) at the end of your summary:
+Separately, whenever UI or frontend files changed, check for screenshots or a
+short recording regardless of PR size. For missing material context, include
+only the applicable items in a short top-level list:
 
 ```
 ### Description Gaps
-The following sections are missing from the PR description and would help reviewers:
-- [ ] **Feature Diagram** — add an architecture or data flow diagram
-- [ ] **Design Trade-offs** — document key decisions and why alternatives were rejected
-- [ ] **How to Test** — add concrete example inputs with expected outputs
-- [ ] **Known Limitations** — note what's out of scope or has known issues
+- **How to Test:** Add concrete reviewer steps and expected results.
+- **Screenshots:** Add before-and-after evidence for the UI change.
 ```
 
-Skip this check entirely for non-feature PRs (bug fixes, chores, docs, refactors).
+Skip feature-only sections for non-feature PRs, but still apply the screenshots
+check to UI changes.
 
 ---
 
@@ -88,6 +98,13 @@ Read every changed file carefully. For each change, evaluate:
 - Secrets or credentials in code
 - Improper authentication/authorization checks
 - Insecure deserialization, path traversal
+
+### Mutation and blast radius
+
+For every changed endpoint, command, or workflow step, classify it as
+read-only or mutating. For mutating operations, check authorization,
+confirmation, idempotency, rollback, dry-run or staging support, and test
+coverage proportional to the blast radius.
 
 ### Performance
 - N+1 queries, missing indexes, unbounded loops
@@ -112,9 +129,6 @@ Read every changed file carefully. For each change, evaluate:
 - Formatting, naming convention deviations
 - Trivial suggestions (nits)
 
-### Praise
-- Identify genuinely good patterns, clever solutions, or improvements worth calling out explicitly
-
 ---
 
 ## Phase 4: Build Comment List
@@ -122,24 +136,14 @@ Read every changed file carefully. For each change, evaluate:
 Compile all findings into a structured list before posting. Each finding needs:
 - `file`: the file path
 - `line`: the line number in the diff (the **right side / new file** line number)
-- `severity`: one of CRITICAL / MAJOR / MINOR / NIT / PRAISE
+- `severity`: one of CRITICAL / MAJOR / MINOR / NIT
 - `comment`: the feedback text
 
 Format each inline comment body as:
 ```
 [SEVERITY] <concise description of the issue>
 
-<explanation of why this matters and/or what the impact is>
-
-**Suggestion:**
-<concrete fix or alternative approach, with code example if helpful>
-```
-
-For PRAISE:
-```
-[PRAISE] <what's good here>
-
-<why this is a good pattern or particularly well done>
+<brief impact and concrete fix or alternative>
 ```
 
 ---
@@ -178,46 +182,28 @@ After all inline comments are posted, post one final top-level PR comment:
 
 ```bash
 gh pr comment <number> --body "$(cat <<'EOF'
-## Code Review Summary
+## Review Summary
 
-**Reviewed by:** Claude Code (as <detected language/framework> specialist)
 **Verdict:** <one of: ✅ Approve | 🔄 Request Changes | 💬 Comment>
+**Findings:** <compact severity counts or "none">
 
----
+<1-3 sentences describing risk and the main actionable issue, if any.>
 
-### Overview
-<2-4 sentence high-level assessment of the PR: what it does, overall quality, major themes>
+### Action Required
+- `file.go:42` — <critical or major issue>
 
----
+### Mutation Risk
+- `<operation>` — <READ-ONLY or MUTATING; include material concerns only>
 
-### Findings by Severity
-
-| Severity | Count |
-|----------|-------|
-| 🔴 CRITICAL | <n> |
-| 🟠 MAJOR | <n> |
-| 🟡 MINOR | <n> |
-| 🔵 NIT | <n> |
-| ✅ PRAISE | <n> |
-
----
-
-### Critical Issues
-<List each CRITICAL finding with file reference — must be resolved before merge>
-- `file.go:42` — <short description>
-
-### Major Issues
-<List each MAJOR finding with file reference>
-- `file.go:87` — <short description>
-
-### Themes & Patterns
-<Cross-cutting observations, e.g. "Error handling is consistently missing across the new service layer" or "Strong use of dependency injection throughout">
-
-### What's Working Well
-<Highlight PRAISE items and any broader positive patterns>
+### Description Gaps
+- <only applicable missing reviewer information>
 EOF
 )"
 ```
+
+Omit empty sections. If there are no findings, post only the heading, verdict,
+and `No actionable issues found.` Do not repeat every minor inline finding in
+the summary.
 
 ---
 
@@ -229,7 +215,6 @@ EOF
 | `[MAJOR]` | Significant performance issues, design flaws, missing error handling — **strongly recommend fix** |
 | `[MINOR]` | Code quality, maintainability, non-blocking improvements — **fix if time allows** |
 | `[NIT]` | Style, naming, tiny preferences — **optional, no pressure** |
-| `[PRAISE]` | Genuinely good code worth calling out — **no action needed** |
 
 ---
 
@@ -239,6 +224,8 @@ EOF
 - **Be precise with line numbers** — wrong line numbers break inline comments; double-check against the diff
 - **Be constructive** — every CRITICAL/MAJOR/MINOR comment must include a concrete suggestion, not just criticism
 - **Calibrate to the PR size** — a 5-line fix doesn't need 20 nits; a 500-line feature deserves thorough coverage
+- **Keep posted output concise** — detailed reasoning stays internal unless
+  needed to understand or fix an issue
 - **Respect existing patterns** — if the codebase uses a certain convention consistently, flag deviations as NITs not MAJORs
 - **Never post the summary before all inline comments** — inline comments first, summary last
 - If `gh` is not authenticated, tell the user to run `gh auth login`

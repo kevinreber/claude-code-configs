@@ -1,3 +1,8 @@
+---
+name: go
+description: Idiomatic Go patterns, tooling, and best practices for writing clear, performant, and maintainable Go code.
+---
+
 # Go Skill
 
 Idiomatic Go patterns, tooling, and best practices for writing clear, performant, and maintainable Go code.

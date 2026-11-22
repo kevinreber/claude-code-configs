@@ -25,7 +25,7 @@ def get_device_id():
     """Return a stable identifier for this machine.
 
     Uses the hostname, which is already used in the sessions table
-    (e.g. 'kreber-mn1802.linkedin.biz' for work, 'kevinrebers-MacBook-Pro.local' for personal).
+    (for example, 'work-laptop.internal' or 'personal-laptop.local').
     """
     return socket.gethostname()
 
