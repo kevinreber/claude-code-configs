@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Perform an issue-focused review of a pull request, post concise actionable inline comments, and leave a short summary with the overall verdict.
+description: Perform an issue-focused review of a pull request, post concise natural-language inline comments, and leave a short summary with the overall verdict.
 ---
 
 # PR Review
@@ -11,6 +11,16 @@ Perform a deep review internally, then post concise, actionable feedback.
 
 - Do not generate praise findings or "what is working well" sections.
 - Prefer one issue per inline comment: problem, impact, and concrete fix.
+- Write like a teammate, not an audit tool. Use plain words, active voice, and natural sentences.
+- Start with the concrete behavior or failure. Avoid generic openings such as
+  "This change introduces," "It is important to note," or "There is a
+  potential risk."
+- Do not use `Problem:`, `Impact:`, `Recommendation:`, or similar report-style
+  labels inside posted comments.
+- Avoid canned praise and politeness such as "Looks good overall," "Great
+  work," or "Thanks for the changes."
+- Use project terminology from the diff instead of vague phrases such as "the
+  system," "the logic," or "the implementation."
 - Keep inline comments under roughly 100 words and summaries under roughly 200
   words unless a complex issue requires more.
 - Do not expose internal review mechanics or reviewer personas.
@@ -73,7 +83,7 @@ short recording regardless of PR size. For missing material context, include
 only the applicable items in a short top-level list:
 
 ```
-### Description Gaps
+### PR description
 - **How to Test:** Add concrete reviewer steps and expected results.
 - **Screenshots:** Add before-and-after evidence for the UI change.
 ```
@@ -141,10 +151,21 @@ Compile all findings into a structured list before posting. Each finding needs:
 
 Format each inline comment body as:
 ```
-[SEVERITY] <concise description of the issue>
+[SEVERITY] <plain-language statement of the issue>
 
-<brief impact and concrete fix or alternative>
+<Why it matters and what should change, written as natural prose.>
 ```
+
+Example:
+
+```
+[MAJOR] Invalid requests are retried
+
+A 400 response will be sent three more times even though another attempt cannot succeed. Treat 4xx responses as non-retryable and keep retries for transient failures.
+```
+
+Read the comment aloud before posting. If it sounds like a report template,
+rewrite it.
 
 ---
 
@@ -182,28 +203,28 @@ After all inline comments are posted, post one final top-level PR comment:
 
 ```bash
 gh pr comment <number> --body "$(cat <<'EOF'
-## Review Summary
+## Review summary
 
 **Verdict:** <one of: ✅ Approve | 🔄 Request Changes | 💬 Comment>
-**Findings:** <compact severity counts or "none">
 
-<1-3 sentences describing risk and the main actionable issue, if any.>
+<One short paragraph in plain language. Say what needs attention and why. Include counts only when they help the reader.>
 
-### Action Required
+### Needs a fix before merge
 - `file.go:42` — <critical or major issue>
 
-### Mutation Risk
-- `<operation>` — <READ-ONLY or MUTATING; include material concerns only>
+### Data-changing behavior
+- `<operation>` — <read-only or mutating, plus any material concern>
 
-### Description Gaps
+### PR description
 - <only applicable missing reviewer information>
 EOF
 )"
 ```
 
 Omit empty sections. If there are no findings, post only the heading, verdict,
-and `No actionable issues found.` Do not repeat every minor inline finding in
-the summary.
+and `No issues found.` Do not repeat every minor inline finding in the summary.
+Do not use phrases such as "Overall, this PR..." or "The implementation appears
+to..." State the conclusion directly.
 
 ---
 
@@ -226,6 +247,8 @@ the summary.
 - **Calibrate to the PR size** — a 5-line fix doesn't need 20 nits; a 500-line feature deserves thorough coverage
 - **Keep posted output concise** — detailed reasoning stays internal unless
   needed to understand or fix an issue
+- **Sound human** — remove canned transitions, generic praise, repeated
+  context, and report-style labels before posting
 - **Respect existing patterns** — if the codebase uses a certain convention consistently, flag deviations as NITs not MAJORs
 - **Never post the summary before all inline comments** — inline comments first, summary last
 - If `gh` is not authenticated, tell the user to run `gh auth login`

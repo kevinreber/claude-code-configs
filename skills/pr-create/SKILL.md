@@ -10,6 +10,11 @@ Create a pull request with proper formatting following project guidelines.
 ## Writing style
 
 - Lead with what changed and why. Prefer one to three short summary bullets.
+- Write in the same plain language you would use when handing the change to a
+  teammate. Prefer concrete verbs and project terms over generic phrases such
+  as "enhances," "streamlines," "robust," or "comprehensive."
+- Skip stock introductions such as "This PR introduces..." when the first
+  bullet can state the change directly.
 - Keep non-feature PR bodies under roughly 250 words and feature PRs under
   roughly 500 words unless material risk requires more.
 - Include only information that helps a human understand, test, or safely
@@ -19,6 +24,27 @@ Create a pull request with proper formatting following project guidelines.
 - Omit empty and not-applicable sections.
 - For non-trivial PRs, perform three fresh passes over context discovery and
   follow-up items, merge unique results, and verify them against the diff.
+
+### Testing Done
+
+- Prefer one to three bullets. A simple change often needs only one.
+- Group checks by reviewer value, not by the order they ran. Combine linters
+  or targeted suites when the result is the same.
+- State the observed result. Do not infer coverage from test names or explain
+  every assertion.
+- Mention failures, skipped checks, or unverified behavior only when they
+  affect review or release confidence.
+- Use `Not run: <reason>` for a material check that was not run. Do not list
+  every check that could theoretically apply.
+
+Too much:
+
+> Ran the auth unit tests, then re-ran them after the null guard, then ran the formatter, linter, type checker, and a local code review. All validation steps completed successfully.
+
+Better:
+
+> - Auth tests: 182 passed, 3 skipped.
+> - Formatting, lint, and type checks: passed.
 
 ## Instructions
 
@@ -56,7 +82,7 @@ Create a pull request with proper formatting following project guidelines.
      - <1-3 short bullets describing what changed and why>
 
      ## Testing Done
-     - <1-4 grouped checks with concise results>
+     - <1-3 grouped checks with concise results>
      ```
    - For **feature PRs**, use the extended body (see Feature PR Format below)
 10. Use a HEREDOC for the PR body to ensure correct formatting
@@ -118,7 +144,7 @@ interacting parts. Keep it to what helps a reviewer understand the design.>
 - <real limitation or out-of-scope item>
 
 ## Testing Done
-- <1-5 grouped checks with concise results>
+- <1-3 grouped checks with concise results>
 ```
 
 ## Important Notes
@@ -128,6 +154,8 @@ interacting parts. Keep it to what helps a reviewer understand the design.>
 - Optional feature sections should appear only when they add reviewer value
 - Trade-offs should capture real decisions, not hypotheticals
 - Test steps should use real example values (not `<your value>`) so anyone can copy-paste and run them
+- Before posting, remove filler, repeated context, and any sentence that sounds
+  like a generated status report rather than a useful handoff
 - Default base branch is `main` (check git config if unsure)
 - If there are uncommitted changes, commit them first with a smart message
 - Use Conventional Commits format for commit messages (feat, fix, docs, etc.)

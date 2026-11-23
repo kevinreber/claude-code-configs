@@ -8,6 +8,20 @@ description: Address pull-request comments and failing CI checks, post concise r
 Fetch all review feedback and CI state, analyze it, propose scoped fixes, and
 verify every approved action.
 
+## Writing style
+
+- Keep discovery and verification internal; do not turn them into a transcript.
+- Write replies the way a teammate would: answer the point directly, use the
+  reviewer's terminology, and say what changed or why the suggestion does not
+  fit.
+- Avoid canned phrases such as "Thank you for the feedback," "Addressed,"
+  "Implemented as suggested," or "This has been resolved."
+- Do not use `Analysis:`, `Resolution:`, `Rationale:`, or similar report-style
+  labels in posted replies.
+- Mention a commit hash only when it helps the reviewer find the change. A
+  useful reply explains the change; `Fixed in abc123` by itself usually does
+  not.
+
 ## Instructions
 
 1. **Identify the current PR:**
@@ -118,9 +132,13 @@ verify every approved action.
    - Push changes: `git push`
 
 8. **Post replies for approved actions:**
-   - For ACCEPTED changes: Reply with "Fixed in [commit hash]"
-   - For DECLINED changes: Reply with polite explanation
-   - For QUESTIONS: Reply with answer
+   - For ACCEPTED changes: Say what changed in one sentence, optionally
+     followed by the commit hash. Example: `Updated the retry path so 4xx
+     responses fail immediately; the change is in abc123.`
+   - For DECLINED changes: Explain the concrete reason in one or two sentences
+     without sounding defensive.
+   - For QUESTIONS: Answer the question directly without first summarizing the
+     thread.
    - Reply in-thread for inline comments instead of posting disconnected
      top-level comments
 
@@ -136,15 +154,16 @@ verify every approved action.
     ```markdown
     ## PR Feedback
 
-    **Result:** 3 comments addressed, 3/3 replies confirmed, required checks passing.
+    Addressed 3 comments, confirmed all 3 replies, and required checks are passing.
 
     - Fixed the null-handling issue and updated the affected test.
     - Answered the caching question in-thread.
 
-    **Outstanding:** One external integration check remains unavailable.
+    **Still open:** One external integration check remains unavailable.
     ```
 
-    Omit Outstanding when nothing remains.
+    Omit Still open when nothing remains. Keep the summary focused on outcomes,
+    not the sequence of work.
 
 ## Important Notes
 

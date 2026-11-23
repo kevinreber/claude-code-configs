@@ -11,7 +11,14 @@ Update the title and description of an existing pull request to accurately refle
 
 Follow `pr-create`'s concise PR-writing rules. Lead with what changed and why,
 group checks, omit process narration, and include optional diagrams or tables
-only when they materially reduce reviewer effort.
+only when they materially reduce reviewer effort. Use plain, natural language
+and concrete project terms. Avoid stock phrases such as "This PR introduces,"
+"comprehensive validation," or "enhances the developer experience."
+
+Keep Testing Done to the observed results a reviewer needs: usually one to
+three bullets grouped by outcome. Do not narrate the order checks ran or infer
+coverage from test names. Use `Not run: <reason>` only for a material check
+that remains unverified.
 
 ## Instructions
 
@@ -69,9 +76,11 @@ only when they materially reduce reviewer effort.
      - <1-3 short bullets describing what changed and why>
 
      ## Testing Done
-     - <1-4 grouped checks with concise results>
+     - <1-3 grouped checks with concise results>
      ```
    - For **feature PRs**, use the Feature PR Format below
+   - Rewrite verbose existing testing prose into short grouped results while
+     preserving real failures, skipped checks, and material limitations
 
 9. **Preserve custom content:**
    - Compare the existing PR body with the generated one section-by-section
@@ -144,8 +153,7 @@ optional sections only when they materially help reviewers:
 - <real limitation or out-of-scope item>
 
 ## Testing Done
-- [ ] <test step with expected result>
-- [ ] <edge case verified>
+- <1-3 grouped checks with concise results>
 ```
 
 ## Important Notes
@@ -158,3 +166,5 @@ optional sections only when they materially help reviewers:
 - Trade-offs table should capture real decisions made during implementation, not hypotheticals
 - Context discovery tables should reflect actual values from the diff, not placeholders — a reviewer should learn something concrete by reading them
 - When updating a feature PR with new commits, update existing sections to reflect the new state rather than appending — the PR description should read as a coherent document, not a changelog
+- Before applying the update, remove filler, repeated context, and report-style
+  prose that does not help a reviewer understand or test the final change

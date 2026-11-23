@@ -116,29 +116,24 @@ gh pr view <number> --json comments --jq '.comments[-1].url'
 
 ## Final Report
 
-Close every run with this, in the conversation:
+Close every run with a short teammate-style handoff:
 
 ```
-## PR Pipeline — <mode>
-
 **PR:** <url or "not yet opened">
-**Rounds run:** <n> (<converged | hit the 3-round ceiling>)
-
-### Blockers
-<findings that should stop a merge, with file:line and the concrete failure>
-
-### Non-blocking
-<worth fixing, will not break production>
-
-### Checked and clean
-<what you verified that turned out fine — this is what makes "no blockers" mean something>
-
-### Posted to GitHub
-<inline comment count, summary comment URL, review state — or an explicit "nothing posted, because …">
-
-### Skipped
-<any phase you did not run, and why>
+**Result:** <ready for review/merge, needs changes, or review posted>
+- <material blocker or outcome>
+- <current check status>
+**Still open:** <only items that need a human decision>
 ```
+
+- Omit Still open when nothing remains.
+- Mention the round count only when the three-round ceiling was reached or a
+  later round materially changed the result.
+- Mention skipped work only when it leaves something unverified.
+- Do not add a "checked and clean" inventory, narrate every phase, or paste the
+  internal analysis into the handoff.
+- Use direct sentences, concrete outcomes, and no generic praise or
+  generated-sounding status language.
 
 ## Important Notes
 
@@ -146,5 +141,7 @@ Close every run with this, in the conversation:
 - **Do not auto-commit on a PR you do not own.** Not even a formatting fix. Suggest it in a comment.
 - **Never merge, close, or force-push a pull request.**
 - **Three rounds is a ceiling, not a target.** Most PRs converge in one or two. Burning three rounds on a small diff produces manufactured findings.
-- **Report honestly.** If the tests failed, show the output. If you skipped a phase, name it in the Skipped section. If findings were capped or filtered out, say how many and why.
+- **Report honestly.** If the tests failed, show the output. If skipped work leaves something unverified, say so. If findings were capped or filtered out, say how many and why.
 - **Never post a review comment you have not verified against the actual diff.** A confidently wrong inline comment costs the author more time than no review at all.
+- **Keep GitHub-facing text human.** Comments, replies, summaries, and PR-body
+  updates inherit the natural-language rules from the underlying skills.
