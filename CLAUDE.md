@@ -24,6 +24,7 @@ claude-code-configs/
 │   └── architect.md        # /architect — system design assistance
 ├── skills/                 # Skill files (.md → ~/.claude/skills/)
 │   ├── validate/           # Multi-lens change validation
+│   ├── pr-simplicity-review/ # Focused removable-complexity review
 │   ├── pr-pipeline/        # Pull-request lifecycle orchestration
 │   ├── diagram/            # Diagram source, references, and render helpers
 │   ├── perf-sweep/         # Evidence-backed performance scan

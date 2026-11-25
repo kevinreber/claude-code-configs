@@ -1,11 +1,13 @@
 ---
 name: pr-pipeline
-description: Orchestrate the full pull-request workflow end to end — pick the right mode (review an existing PR, ship new work, or respond to review comments), chain the pr-* and validate skills in the right order, converge over repeated passes, and always leave a visible trail on GitHub. Use when the user says "run the pipeline", "/pr-pipeline", "review this PR properly", "take this change all the way to a PR", or wants the standard post-change review workflow instead of invoking each skill by hand.
+description: Orchestrate the full pull-request workflow end to end — pick the right mode, validate and simplify the diff, review it, respond to feedback, converge over repeated passes, and leave a visible trail on GitHub. Use when the user says "run the pipeline", "/pr-pipeline", "review this PR properly", "take this change all the way to a PR", or wants the standard post-change review workflow instead of invoking each skill by hand.
 ---
 
 # PR Pipeline
 
-The orchestrator for pull-request work. Individual skills (`validate`, `pr-review`, `pr-create`, …) each do one job well; this skill decides **which** of them to run, **in what order**, and **when to stop**.
+The orchestrator for pull-request work. Individual skills (`validate`,
+`pr-simplicity-review`, `pr-review`, `pr-create`, …) each do one job well; this
+skill decides **which** of them to run, **in what order**, and **when to stop**.
 
 Two rules govern everything below:
 
@@ -43,7 +45,13 @@ State the chosen mode in one line before proceeding, so the user can redirect yo
 
 ### Freeform modifiers
 
-The user may pass natural language alongside the invocation — `/pr-pipeline "review only, skip the validate passes"`, `/pr-pipeline "focus on correctness and rollout risk, skip the nits"`, `/pr-pipeline "do a review without pipeline"`. Honor it: it overrides the mode table and the phase selection. A modifier asking for less work means run less, not run the same work and summarize it differently.
+The user may pass natural language alongside the invocation —
+`/pr-pipeline "review only, skip the validate passes"`,
+`/pr-pipeline "skip simplicity"`, `/pr-pipeline "focus on correctness and
+rollout risk, skip the nits"`, or `/pr-pipeline "do a review without
+pipeline"`. Honor it: it overrides the mode table and phase selection. A
+modifier asking for less work means run less, not run the same work and
+summarize it differently.
 
 ## Phase 1: Pre-flight
 
@@ -60,24 +68,49 @@ Before analyzing anything, make sure you are analyzing the right thing.
 
 ## Phase 2: Analysis Passes
 
-This is the core of the pipeline. Run both skills — they catch different classes of problem, and the overlap between them is the signal that a finding is real.
+This is the core of the pipeline. Run these skills in order:
 
-1. **Invoke the `validate` skill** on the diff. Its six independent lenses (correctness, integration, adversarial, observability, test quality, operational readiness) plus the synthesis pass produce the deep findings.
-2. **Invoke the `pr-review` skill** on the PR. It produces the line-anchored, severity-labeled comments that actually land on GitHub.
+1. **Invoke the `validate` skill** on the diff. Its six independent lenses
+   (correctness, integration, adversarial, observability, test quality,
+   operational readiness) plus the synthesis pass produce the deep findings.
+2. **Invoke `pr-simplicity-review` once** against the same current diff. It
+   checks for removable complexity, redundant code or tests, missed reuse,
+   speculative abstractions, and scope creep.
+3. **Invoke the `pr-review` skill** on the resulting PR diff. It verifies and
+   deduplicates the earlier candidates, then produces the line-anchored,
+   severity-labeled comments that land on GitHub.
+
+On the user's PR, `pr-simplicity-review` may apply high-confidence,
+behavior-preserving simplifications. Run the smallest relevant validation,
+commit, and push before `pr-review` so it reviews the updated diff. On another
+author's PR, `validate` and `pr-simplicity-review` are report-only; pass their
+material candidates into `pr-review` without changing the branch.
 
 ### Converging over repeated passes
 
-A single pass under-reports. Repeat Phase 2 until findings stop changing, to a **maximum of three rounds**:
+A single pass can under-report. Repeat Phase 2 against the current diff until
+findings stop changing, to a **maximum of three rounds**. Run
+`pr-simplicity-review` once per round; do not ensemble it separately.
 
 - **Round 1** establishes the baseline finding set.
 - **Round 2** re-runs against the same diff. Genuinely new findings mean round 1 was incomplete; keep going.
 - **Round 3** is the ceiling. Stop here even if new findings appear, and say so in the report rather than looping.
 
-Stop early the moment a round produces no new findings. Deduplicate across rounds by `file:line` plus the substance of the claim — the same defect described two ways is one finding.
+Stop early the moment a round produces no new findings or material
+simplifications. Deduplicate across rounds by `file:line` plus the substance of
+the claim — the same issue described two ways is one finding.
 
 ### Filtering before you post
 
-Findings survive to Phase 5 only if you can state a concrete failure: specific inputs or state producing a wrong result, a crash, a security hole, or an operational failure. A finding you cannot make fail is a question, not a defect — either ask it as a question or drop it.
+Correctness findings survive to Phase 5 only if you can state a concrete
+failure: specific inputs or state producing a wrong result, a crash, a security
+hole, or an operational failure. A finding you cannot make fail is a question,
+not a defect — either ask it as a question or drop it.
+
+Simplicity findings use `pr-simplicity-review`'s stricter maintainability bar
+instead: an exact unnecessary element, a concrete behavior-preserving
+alternative, and meaningful maintenance value. Treat these as non-blocking
+unless the complexity also creates a correctness or operational risk.
 
 Weight the output toward correctness and rollout blockers. Style nits are worth posting only when the surrounding code makes the convention unambiguous.
 
@@ -137,10 +170,15 @@ Close every run with a short teammate-style handoff:
 
 ## Important Notes
 
-- **The pipeline composes skills; it does not reimplement them.** When a phase says invoke `validate` or `pr-review`, invoke that skill and follow it. Duplicating their logic here means the two drift apart.
+- **The pipeline composes skills; it does not reimplement them.** When a phase
+  says invoke `validate`, `pr-simplicity-review`, or `pr-review`, invoke that
+  skill and follow it. Duplicating their logic here means the skills drift.
 - **Do not auto-commit on a PR you do not own.** Not even a formatting fix. Suggest it in a comment.
 - **Never merge, close, or force-push a pull request.**
 - **Three rounds is a ceiling, not a target.** Most PRs converge in one or two. Burning three rounds on a small diff produces manufactured findings.
+- **Do not multiply review passes.** `validate` and `pr-review` already perform
+  independent analysis. `pr-simplicity-review` is deliberately one bounded pass
+  per outer round.
 - **Report honestly.** If the tests failed, show the output. If skipped work leaves something unverified, say so. If findings were capped or filtered out, say how many and why.
 - **Never post a review comment you have not verified against the actual diff.** A confidently wrong inline comment costs the author more time than no review at all.
 - **Keep GitHub-facing text human.** Comments, replies, summaries, and PR-body

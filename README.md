@@ -77,7 +77,7 @@ Specialized capabilities for domain-specific tasks:
 **Workflow skills**:
 - `fable` - Fable-class working discipline (outcome-first output, finish-the-turn autonomy) for smaller models
 - `validate` - Multi-lens validation of recent changes
-- `pr-create`, `pr-review`, `pr-comments-fix`, `pr-update` - Pull-request lifecycle
+- `pr-create`, `pr-review`, `pr-simplicity-review`, `pr-comments-fix`, `pr-update` - Pull-request lifecycle
 - `pr-pipeline`, `pr-babysit` - End-to-end PR orchestration and monitoring
 - `worktree-gc` - Safe Git worktree inventory and cleanup
 - `diagram` - Editable architecture and process diagrams
